@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Container, Typography, Box, TextField, Slider, RadioGroup, FormControlLabel, Radio, FormLabel, FormControl, Checkbox, Grid, Paper } from '@mui/material';
+import { Container, Typography, Box, TextField, Slider, RadioGroup, FormControlLabel, Radio, FormLabel, FormControl, Checkbox, Grid, Paper, TableContainer, Table, TableHead, TableBody, TableRow, TableCell } from '@mui/material';
 import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -37,6 +37,85 @@ const APPLIANCE_LOADS = {
   Aircon: 1.5,
 };
 
+// Add new type for appliance schedule
+const DEFAULT_SCHEDULE = {
+  on1: '',
+  off1: '',
+  on2: '',
+  off2: '',
+};
+
+// Helper function to convert time string to decimal hours
+function timeToDecimal(timeStr) {
+  if (!timeStr) return null;
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  return hours + minutes / 60;
+}
+
+// Helper function to check if current time is within schedule
+function isApplianceRunning(timeOfDay, schedule) {
+  // Debug logging for schedule state
+  console.log('Checking schedule:', schedule);
+  
+  // If both schedules are empty, return false
+  if ((!schedule.on1 || !schedule.off1) && (!schedule.on2 || !schedule.off2)) {
+    console.log('Both schedules are empty');
+    return false;
+  }
+
+  const currentTime = timeOfDay;
+  const on1 = timeToDecimal(schedule.on1);
+  const off1 = timeToDecimal(schedule.off1);
+  const on2 = timeToDecimal(schedule.on2);
+  const off2 = timeToDecimal(schedule.off2);
+
+  // Debug logging for time conversion
+  console.log(`Time conversion for ${timeOfDay}:`, {
+    on1: schedule.on1,
+    off1: schedule.off1,
+    on2: schedule.on2,
+    off2: schedule.off2,
+    currentTime,
+    on1Decimal: on1,
+    off1Decimal: off1,
+    on2Decimal: on2,
+    off2Decimal: off2
+  });
+  
+  // Check first time slot if both times are set
+  if (schedule.on1 && schedule.off1) {
+    if (off1 < on1) {
+      // Schedule spans midnight (e.g., 22:00 to 02:00)
+      if (currentTime >= on1 || currentTime <= off1) {
+        console.log('Appliance running in first slot (spans midnight)');
+        return true;
+      }
+    } else if (currentTime >= on1 && currentTime <= off1) {
+      // Normal schedule (e.g., 09:00 to 17:00)
+      console.log('Appliance running in first slot (normal)');
+      return true;
+    }
+  }
+  
+  // Check second time slot if both times are set
+  if (schedule.on2 && schedule.off2) {
+    if (off2 < on2) {
+      // Schedule spans midnight
+      if (currentTime >= on2 || currentTime <= off2) {
+        console.log('Appliance running in second slot (spans midnight)');
+        return true;
+      }
+    } else if (currentTime >= on2 && currentTime <= off2) {
+      // Normal schedule
+      console.log('Appliance running in second slot (normal)');
+      return true;
+    }
+  }
+  
+  console.log('Appliance not running');
+  return false;
+}
+
 // Solar production function (in kW) using a bell curve that only produces power between sunrise and sunset.
 function solarProduction(t, inverterCapacity) {
   if (t < SUNRISE || t > SUNSET) return 0;
@@ -62,11 +141,13 @@ function simulateDay(timeOfDay, inverterCapacity, batteryCapacity, appliancesSta
   
   // Integrate over time from 0 to timeOfDay
   for (let t = 0; t <= timeOfDay; t += dt) {
-    // Calculate house load (base load + fridge + any toggled appliances)
-    let load = BASE_LOAD + FRIDGE_LOAD;
-    if (appliancesState.TV) load += APPLIANCE_LOADS.TV;
-    if (appliancesState.Oven) load += APPLIANCE_LOADS.Oven;
-    if (appliancesState.Aircon) load += APPLIANCE_LOADS.Aircon;
+    // Calculate house load (fridge + any scheduled appliances)
+    let load = FRIDGE_LOAD; // Start with just the fridge load
+    Object.entries(appliancesState).forEach(([name, { enabled, schedule }]) => {
+      if (enabled && isApplianceRunning(t, schedule)) {
+        load += APPLIANCE_LOADS[name];
+      }
+    });
     
     // Integrate house consumption
     cumulativeHouseConsumption += load * dt; // kWh
@@ -93,7 +174,7 @@ function simulateDay(timeOfDay, inverterCapacity, batteryCapacity, appliancesSta
       batteryEnergy -= energyFromBattery;
       const energyShortfall = deficitEnergy - energyFromBattery;
       cumulativeGridImport += energyShortfall;
-    }
+  }
     
     // Battery State of Charge (SoC)
     const batterySoC = (batteryEnergy / batteryCapacity) * 100;
@@ -106,10 +187,12 @@ function simulateDay(timeOfDay, inverterCapacity, batteryCapacity, appliancesSta
   }
   
   // Final instantaneous values at timeOfDay
-  let finalLoad = BASE_LOAD + FRIDGE_LOAD;
-  if (appliancesState.TV) finalLoad += APPLIANCE_LOADS.TV;
-  if (appliancesState.Oven) finalLoad += APPLIANCE_LOADS.Oven;
-  if (appliancesState.Aircon) finalLoad += APPLIANCE_LOADS.Aircon;
+  let finalLoad = FRIDGE_LOAD; // Start with just the fridge load
+  Object.entries(appliancesState).forEach(([name, { enabled, schedule }]) => {
+    if (enabled && isApplianceRunning(timeOfDay, schedule)) {
+      finalLoad += APPLIANCE_LOADS[name];
+    }
+  });
   const finalSolar = solarProduction(timeOfDay, inverterCapacity);
   
   return {
@@ -130,19 +213,19 @@ function simulateDay(timeOfDay, inverterCapacity, batteryCapacity, appliancesSta
 
 function App() {
   // Component state
-  const [inverterCapacity, setInverterCapacity] = useState(3.0);
+  const [inverterCapacity, setInverterCapacity] = useState(5.0);
   const [batteryCapacity, setBatteryCapacity] = useState(10);
   const [timeOfDay, setTimeOfDay] = useState(12); // default: 12:00 (noon)
   const [appliances, setAppliances] = useState({
-    TV: false,
-    Oven: false,
-    Aircon: false,
+    TV: { enabled: false, schedule: { ...DEFAULT_SCHEDULE } },
+    Oven: { enabled: false, schedule: { ...DEFAULT_SCHEDULE } },
+    Aircon: { enabled: false, schedule: { ...DEFAULT_SCHEDULE } },
   });
   
   // Handlers for inputs
   const handleInverterCapacityChange = (e) => {
     const value = parseFloat(e.target.value);
-    if (!isNaN(value)) setInverterCapacity(value);
+    if (!isNaN(value) && value >= 0) setInverterCapacity(value);
   };
   
   const handleBatteryCapacityChange = (event) => {
@@ -150,7 +233,23 @@ function App() {
   };
   
   const handleApplianceToggle = (name) => {
-    setAppliances(prev => ({ ...prev, [name]: !prev[name] }));
+    setAppliances(prev => ({
+      ...prev,
+      [name]: { ...prev[name], enabled: !prev[name].enabled }
+    }));
+  };
+  
+  const handleScheduleChange = (name, scheduleType, value) => {
+    setAppliances(prev => ({
+      ...prev,
+      [name]: {
+        ...prev[name],
+        schedule: {
+          ...prev[name].schedule,
+          [scheduleType]: value
+        }
+      }
+    }));
   };
   
   const handleTimeChange = (event, newValue) => {
@@ -232,106 +331,248 @@ function App() {
     },
   };
   
+  // Calculate current load including scheduled appliances
+  const calculateCurrentLoad = () => {
+    let load = FRIDGE_LOAD; // Start with just the fridge load
+    console.log('Initial load (fridge):', load);
+    
+    Object.entries(appliances).forEach(([name, { enabled, schedule }]) => {
+      console.log(`Checking ${name}:`, { enabled, schedule });
+      if (enabled && isApplianceRunning(timeOfDay, schedule)) {
+        load += APPLIANCE_LOADS[name];
+        console.log(`Adding load for ${name}: ${APPLIANCE_LOADS[name]}kW. Total load: ${load}kW`);
+      }
+    });
+    return load;
+  };
+  
   return (
-    <Container maxWidth="md" sx={{ paddingTop: 4 }}>
-      <Typography variant="h4" align="center" gutterBottom>
+    <Container maxWidth="lg" sx={{ paddingTop: 4 }}>
+      <Typography variant="h4" align="center" gutterBottom sx={{ 
+        color: '#1976d2',
+        fontWeight: 'bold',
+        mb: 4
+      }}>
         Solar + Battery House Simulation
       </Typography>
       
-      {/* Inverter Capacity Input */}
-      <Box sx={{ marginBottom: 3 }}>
-        <TextField
-          label="Inverter Capacity (kW)"
-          type="number"
-          value={inverterCapacity}
-          onChange={handleInverterCapacityChange}
-          inputProps={{ step: "0.1", min: "0" }}
-          sx={{ width: '200px' }}
-        />
-      </Box>
-      
-      {/* Battery Capacity Selection */}
-      <Box sx={{ marginBottom: 3 }}>
-        <FormControl component="fieldset">
-          <FormLabel component="legend">Battery Capacity (kWh)</FormLabel>
-          <RadioGroup
-            row
-            name="batteryCapacity"
-            value={batteryCapacity.toString()}
-            onChange={handleBatteryCapacityChange}
-          >
-            {['5', '10', '15', '20', '25'].map(cap => (
-              <FormControlLabel
-                key={cap}
-                value={cap}
-                control={<Radio />}
-                label={`${cap} kWh`}
+      <Grid container spacing={3}>
+        {/* Left Column - Controls */}
+        <Grid item xs={12} md={4}>
+          <Paper sx={{ p: 2, mb: 3, border: '1px solid #e0e0e0', width: '100%' }}>
+            <Typography variant="h6" gutterBottom sx={{ color: '#1976d2' }}>
+              System Configuration
+            </Typography>
+            
+            {/* Inverter Capacity Input */}
+            <Box sx={{ mb: 3 }}>
+              <TextField
+                label="Inverter Capacity (kW)"
+                type="number"
+                value={inverterCapacity}
+                onChange={handleInverterCapacityChange}
+                inputProps={{ 
+                  step: "1", 
+                  min: "0",
+                  style: { width: '120px' }
+                }}
+                size="small"
               />
-            ))}
-          </RadioGroup>
-        </FormControl>
-      </Box>
-      
-      {/* Time-of-Day Slider */}
-      <Box sx={{ marginBottom: 3 }}>
-        <Typography gutterBottom>
-          Time of Day: {formatTime(timeOfDay)}
-        </Typography>
-        <Slider
-          value={timeOfDay}
-          onChange={handleTimeChange}
-          min={0}
-          max={24}
-          step={0.1}
-          valueLabelDisplay="auto"
-        />
-      </Box>
-      
-      {/* Appliance Controls */}
-      <Box sx={{ marginBottom: 3 }}>
-        <Typography variant="h6">Appliance Control</Typography>
-        <Typography variant="body1">Fridge is always on (0.1 kW)</Typography>
-        {Object.keys(APPLIANCE_LOADS).map((name) => (
-          <Box key={name}>
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={appliances[name]}
-                  onChange={() => handleApplianceToggle(name)}
-                />
-              }
-              label={`${name} (${APPLIANCE_LOADS[name]} kW)`}
-            />
-          </Box>
-        ))}
-      </Box>
-      
-      {/* Simulation Results */}
-      <Paper sx={{ padding: 2, marginBottom: 3 }}>
-        <Typography variant="h6">Simulation Results</Typography>
-        <Typography variant="body2">Time: {formatTime(timeOfDay)}</Typography>
-        <Typography variant="body2">Solar Production (instantaneous): {simulation.currentSolar.toFixed(2)} kW</Typography>
-        <Typography variant="body2">House Load (instantaneous): {simulation.currentLoad.toFixed(2)} kW</Typography>
-        <Typography variant="body2">Battery SoC: {simulation.batterySoC.toFixed(1)}%</Typography>
-        <Typography variant="body2">Battery Energy: {simulation.batteryEnergy.toFixed(2)} kWh</Typography>
-        <Typography variant="body2">Cumulative Grid Import: {simulation.cumulativeGridImport.toFixed(2)} kWh</Typography>
-        <Typography variant="body2">Cumulative Grid Export: {simulation.cumulativeGridExport.toFixed(2)} kWh</Typography>
-        <Typography variant="body2">Cumulative House Consumption: {simulation.cumulativeHouseConsumption.toFixed(2)} kWh</Typography>
-      </Paper>
-      
-      {/* SVG System Diagram */}
-      <Box sx={{ marginBottom: 3 }}>
-        <Typography variant="h6">System Diagram</Typography>
+            </Box>
+            
+            {/* Battery Capacity Selection */}
+            <Box sx={{ mb: 3 }}>
+              <FormControl component="fieldset" fullWidth>
+                <FormLabel component="legend">Battery Capacity (kWh)</FormLabel>
+                <RadioGroup
+                  row
+                  name="batteryCapacity"
+                  value={batteryCapacity.toString()}
+                  onChange={handleBatteryCapacityChange}
+                >
+                  {['5', '10', '15', '20', '25'].map(cap => (
+                    <FormControlLabel
+                      key={cap}
+                      value={cap}
+                      control={<Radio />}
+                      label={`${cap} kWh`}
+                    />
+                  ))}
+                </RadioGroup>
+              </FormControl>
+            </Box>
+            
+            {/* Time-of-Day Slider */}
+            <Box>
+              <Typography gutterBottom>
+                Time of Day: {formatTime(timeOfDay)}
+              </Typography>
+              <Slider
+                value={timeOfDay}
+                onChange={handleTimeChange}
+                min={0}
+                max={24}
+                step={0.1}
+                valueLabelDisplay="auto"
+                sx={{ color: '#1976d2' }}
+              />
+            </Box>
+          </Paper>
 
-      </Box>
-      
-      {/* Graph Section: Only display if timeOfDay > 0 (graph resets at midnight) */}
-      {timeOfDay > 0 && chartData && (
-        <Box sx={{ width: '700px', height: '700px', marginBottom: 3 }}>
-          <Typography variant="h6" align="center">SoC, Grid Import & Solar Production Over Time</Typography>
-          <Line data={chartData} options={chartOptions} />
-        </Box>
-      )}
+          {/* Appliance Controls */}
+          <Paper sx={{ p: 2, border: '1px solid #e0e0e0', width: '100%' }}>
+            <Typography variant="h6" gutterBottom sx={{ color: '#1976d2' }}>
+              Appliance Control
+            </Typography>
+            <Typography variant="body2" gutterBottom sx={{ color: 'text.secondary' }}>
+              Fridge is always on (0.1 kW)
+            </Typography>
+            <TableContainer>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Appliance</TableCell>
+                    <TableCell>Power (kW)</TableCell>
+                    <TableCell colSpan={2} sx={{ borderLeft: '2px solid #e0e0e0' }}>Time Slot 1</TableCell>
+                    <TableCell colSpan={2} sx={{ borderLeft: '2px solid #e0e0e0' }}>Time Slot 2</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell></TableCell>
+                    <TableCell></TableCell>
+                    <TableCell sx={{ borderLeft: '2px solid #e0e0e0', textAlign: 'center' }}>ON</TableCell>
+                    <TableCell sx={{ textAlign: 'center' }}>OFF</TableCell>
+                    <TableCell sx={{ borderLeft: '2px solid #e0e0e0', textAlign: 'center' }}>ON</TableCell>
+                    <TableCell sx={{ textAlign: 'center' }}>OFF</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {Object.entries(APPLIANCE_LOADS).map(([name, power]) => (
+                    <TableRow key={name}>
+                      <TableCell>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={appliances[name].enabled}
+                              onChange={() => handleApplianceToggle(name)}
+                              color="primary"
+                            />
+                          }
+                          label={name}
+                          sx={{ 
+                            margin: 0,
+                            alignItems: 'center',
+                            '& .MuiFormControlLabel-label': {
+                              marginTop: 2.5,
+                              marginLeft: '8px'
+                            }
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell>{power}</TableCell>
+                      <TableCell sx={{ borderLeft: '2px solid #e0e0e0' }}>
+                        <TextField
+                          type="time"
+                          value={appliances[name].schedule.on1}
+                          onChange={(e) => handleScheduleChange(name, 'on1', e.target.value)}
+                          size="small"
+                          InputLabelProps={{ shrink: true }}
+                          fullWidth
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <TextField
+                          type="time"
+                          value={appliances[name].schedule.off1}
+                          onChange={(e) => handleScheduleChange(name, 'off1', e.target.value)}
+                          size="small"
+                          InputLabelProps={{ shrink: true }}
+                          fullWidth
+                        />
+                      </TableCell>
+                      <TableCell sx={{ borderLeft: '2px solid #e0e0e0' }}>
+                        <TextField
+                          type="time"
+                          value={appliances[name].schedule.on2}
+                          onChange={(e) => handleScheduleChange(name, 'on2', e.target.value)}
+                          size="small"
+                          InputLabelProps={{ shrink: true }}
+                          fullWidth
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <TextField
+                          type="time"
+                          value={appliances[name].schedule.off2}
+                          onChange={(e) => handleScheduleChange(name, 'off2', e.target.value)}
+                          size="small"
+                          InputLabelProps={{ shrink: true }}
+                          fullWidth
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Paper>
+        </Grid>
+
+        {/* Right Column - Results and Visualization */}
+        <Grid item xs={12} md={8}>
+          {/* Simulation Results */}
+          <Paper sx={{ p: 2, mb: 3, border: '1px solid #e0e0e0', width: '100%' }}>
+            <Typography variant="h6" gutterBottom sx={{ color: '#1976d2' }}>
+              Simulation Results
+            </Typography>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="body2" color="text.secondary">Time</Typography>
+                <Typography variant="h6">{formatTime(timeOfDay)}</Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="body2" color="text.secondary">Solar Production</Typography>
+                <Typography variant="h6" color="success.main">{simulation.currentSolar.toFixed(2)} kW</Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="body2" color="text.secondary">House Load</Typography>
+                <Typography variant="h6" color="error.main">{calculateCurrentLoad().toFixed(2)} kW</Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="body2" color="text.secondary">Battery SoC</Typography>
+                <Typography variant="h6" color="primary.main">{simulation.batterySoC.toFixed(1)}%</Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="body2" color="text.secondary">Battery Energy</Typography>
+                <Typography variant="h6">{simulation.batteryEnergy.toFixed(2)} kWh</Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="body2" color="text.secondary">Grid Import</Typography>
+                <Typography variant="h6" color="error.main">{simulation.cumulativeGridImport.toFixed(2)} kWh</Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="body2" color="text.secondary">Grid Export</Typography>
+                <Typography variant="h6" color="success.main">{simulation.cumulativeGridExport.toFixed(2)} kWh</Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="body2" color="text.secondary">House Consumption</Typography>
+                <Typography variant="h6">{simulation.cumulativeHouseConsumption.toFixed(2)} kWh</Typography>
+              </Grid>
+            </Grid>
+          </Paper>
+          
+          {/* Graph Section */}
+          {timeOfDay > 0 && chartData && (
+            <Paper sx={{ p: 2, border: '1px solid #e0e0e0', width: '100%' }}>
+              <Typography variant="h6" gutterBottom sx={{ color: '#1976d2' }}>
+                System Performance Over Time
+              </Typography>
+              <Box sx={{ width: '100%', height: '400px' }}>
+                <Line data={chartData} options={chartOptions} />
+              </Box>
+            </Paper>
+          )}
+        </Grid>
+      </Grid>
     </Container>
   );
 }

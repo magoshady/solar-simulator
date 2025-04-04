@@ -416,8 +416,14 @@ function App() {
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
-    animation: {
-      duration: 0 // Disable animations for smoother updates
+    animation: false, // Disable all animations
+    layout: {
+      padding: {
+        left: 10,
+        right: 10,
+        top: 10,
+        bottom: 10
+      }
     },
     plugins: {
       legend: { 
@@ -591,7 +597,43 @@ function App() {
                       width: '100%',
                       '& .MuiFormControlLabel-label': {
                         marginTop: 0,
-                        marginLeft: '8px'
+                        marginLeft: '2px'
+                      },
+                      '& .MuiRadio-root': {
+                        padding: '4px',
+                        marginRight: '2px'
+                      }
+                    }}
+                  />
+                ))}
+              </RadioGroup>
+            </Box>
+
+            {/* Battery Capacity Selection - Desktop */}
+            <Box sx={{ mb: 3, display: { xs: 'none', md: 'block' } }}>
+              <FormLabel component="legend">Battery Capacity (kWh)</FormLabel>
+              <RadioGroup
+                row
+                name="batteryCapacity"
+                value={batteryCapacity.toString()}
+                onChange={handleBatteryCapacityChange}
+              >
+                {['5', '10', '15', '20', '25'].map(cap => (
+                  <FormControlLabel
+                    key={cap}
+                    value={cap}
+                    control={<Radio />}
+                    label={`${cap} kWh`}
+                    sx={{ 
+                      margin: 0,
+                      padding: '8px 16px',
+                      '& .MuiFormControlLabel-label': {
+                        marginTop: 2,
+                        marginLeft: '2px'
+                      },
+                      '& .MuiRadio-root': {
+                        padding: '4px',
+                        marginRight: '2px'
                       }
                     }}
                   />
@@ -600,8 +642,8 @@ function App() {
             </Box>
           </Paper>
 
-          {/* Appliance Controls */}
-          <Paper sx={{ p: 2, border: '1px solid #e0e0e0', width: '100%' }}>
+          {/* Appliance Controls - Desktop */}
+          <Paper sx={{ p: 2, border: '1px solid #e0e0e0', width: '100%', display: { xs: 'none', md: 'block' } }}>
             <Typography variant="h6" gutterBottom sx={{ color: '#1976d2' }}>
               Appliance Control
             </Typography>
@@ -704,6 +746,98 @@ function App() {
 
         {/* Right Column - Results and Visualization */}
         <Grid item xs={12} md={8}>
+          {/* Appliance Controls - Mobile */}
+          <Box sx={{ display: { xs: 'block', md: 'none' }, mb: 3 }}>
+            <Typography variant="h6" gutterBottom sx={{ color: '#1976d2' }}>
+              Appliance Control
+            </Typography>
+            <Typography variant="body2" gutterBottom sx={{ color: 'text.secondary', mb: 2 }}>
+              Fridge is always on (0.1 kW)
+            </Typography>
+            {Object.entries(appliances).map(([name, { enabled, schedule }]) => (
+              <Paper key={name} sx={{ p: 1.5, mb: 1.5, border: '1px solid #e0e0e0' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={enabled}
+                        onChange={() => handleApplianceToggle(name)}
+                        color="primary"
+                        size="small"
+                        sx={{ marginTop: 0 }}
+                      />
+                    }
+                    label={name}
+                    sx={{ 
+                      margin: 0,
+                      alignItems: 'center',
+                      '& .MuiFormControlLabel-label': {
+                        marginTop: 0,
+                        marginLeft: '2px',
+                        fontSize: '0.875rem'
+                      },
+                      '& .MuiCheckbox-root': {
+                        marginTop: 0,
+                        padding: '4px'
+                      }
+                    }}
+                  />
+                  <Typography sx={{ ml: 1, fontSize: '0.875rem' }}>{APPLIANCE_LOADS[name]} kW</Typography>
+                </Box>
+
+                {/* Time Slot 1 */}
+                <Box sx={{ mb: 1 }}>
+                  <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5 }}>Time Slot 1</Typography>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <TextField
+                      label="ON"
+                      type="time"
+                      value={schedule.on1}
+                      onChange={(e) => handleScheduleChange(name, 'on1', e.target.value)}
+                      fullWidth
+                      size="small"
+                      InputLabelProps={{ shrink: true }}
+                    />
+                    <TextField
+                      label="OFF"
+                      type="time"
+                      value={schedule.off1}
+                      onChange={(e) => handleScheduleChange(name, 'off1', e.target.value)}
+                      fullWidth
+                      size="small"
+                      InputLabelProps={{ shrink: true }}
+                    />
+                  </Box>
+                </Box>
+
+                {/* Time Slot 2 */}
+                <Box>
+                  <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5 }}>Time Slot 2</Typography>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <TextField
+                      label="ON"
+                      type="time"
+                      value={schedule.on2}
+                      onChange={(e) => handleScheduleChange(name, 'on2', e.target.value)}
+                      fullWidth
+                      size="small"
+                      InputLabelProps={{ shrink: true }}
+                    />
+                    <TextField
+                      label="OFF"
+                      type="time"
+                      value={schedule.off2}
+                      onChange={(e) => handleScheduleChange(name, 'off2', e.target.value)}
+                      fullWidth
+                      size="small"
+                      InputLabelProps={{ shrink: true }}
+                    />
+                  </Box>
+                </Box>
+              </Paper>
+            ))}
+          </Box>
+
           {/* Simulation Results */}
           <Box sx={{ display: 'flex', justifyContent: 'center' }}>
             <Paper sx={{ p: 2, mb: 3, border: '1px solid #e0e0e0', width: '100%' }}>
@@ -780,96 +914,20 @@ function App() {
                 <Box sx={{ 
                   width: '100%', 
                   height: { xs: '500px', md: '400px' },
-                  position: 'relative'
+                  position: 'relative',
+                  '& canvas': {
+                    width: '100% !important',
+                    height: '100% !important'
+                  }
                 }}>
                   <Line 
                     data={chartData} 
                     options={chartOptions}
-                    key={`chart-${timeOfDay}`} // Add key to force remount
                   />
                 </Box>
               </Paper>
             </Box>
           )}
-
-          {/* Appliance Controls - Mobile */}
-          <Box sx={{ display: { xs: 'block', md: 'none' } }}>
-            {Object.entries(appliances).map(([name, { enabled, schedule }]) => (
-              <Paper key={name} sx={{ p: 2, mb: 2, border: '1px solid #e0e0e0' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={enabled}
-                        onChange={() => handleApplianceToggle(name)}
-                        color="primary"
-                        sx={{ marginTop: 0 }}
-                      />
-                    }
-                    label={name}
-                    sx={{ 
-                      margin: 0,
-                      alignItems: 'center',
-                      '& .MuiFormControlLabel-label': {
-                        marginTop: 0,
-                        marginLeft: '2px'
-                      },
-                      '& .MuiCheckbox-root': {
-                        marginTop: 0
-                      }
-                    }}
-                  />
-                  <Typography sx={{ ml: 2 }}>{APPLIANCE_LOADS[name]} kW</Typography>
-                </Box>
-
-                {/* Time Slot 1 */}
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="subtitle2" gutterBottom>Time Slot 1</Typography>
-                  <Box sx={{ display: 'flex', gap: 2 }}>
-                    <TextField
-                      label="ON"
-                      type="time"
-                      value={schedule.on1}
-                      onChange={(e) => handleScheduleChange(name, 'on1', e.target.value)}
-                      fullWidth
-                      size="small"
-                    />
-                    <TextField
-                      label="OFF"
-                      type="time"
-                      value={schedule.off1}
-                      onChange={(e) => handleScheduleChange(name, 'off1', e.target.value)}
-                      fullWidth
-                      size="small"
-                    />
-                  </Box>
-                </Box>
-
-                {/* Time Slot 2 */}
-                <Box>
-                  <Typography variant="subtitle2" gutterBottom>Time Slot 2</Typography>
-                  <Box sx={{ display: 'flex', gap: 2 }}>
-                    <TextField
-                      label="ON"
-                      type="time"
-                      value={schedule.on2}
-                      onChange={(e) => handleScheduleChange(name, 'on2', e.target.value)}
-                      fullWidth
-                      size="small"
-                    />
-                    <TextField
-                      label="OFF"
-                      type="time"
-                      value={schedule.off2}
-                      onChange={(e) => handleScheduleChange(name, 'off2', e.target.value)}
-                      fullWidth
-                      size="small"
-                    />
-                  </Box>
-                </Box>
-              </Paper>
-            ))}
-          </Box>
         </Grid>
       </Grid>
     </Container>

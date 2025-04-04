@@ -347,7 +347,16 @@ function App() {
   const chartOptions = {
     responsive: true,
     plugins: {
-      legend: { position: 'top' },
+      legend: { 
+        display: true,
+        position: 'top',
+        labels: {
+          filter: function(legendItem, data) {
+            // Only show legend for the first three datasets (main data series)
+            return legendItem.datasetIndex < 3;
+          }
+        }
+      },
       title: { display: true, text: 'SoC, Grid Import & Solar Production Over Time' },
     },
     scales: {
@@ -402,29 +411,27 @@ function App() {
       <Grid container spacing={3}>
         {/* Left Column - Controls */}
         <Grid item xs={12} md={4}>
+          {/* System Configuration */}
           <Paper sx={{ p: 2, mb: 3, border: '1px solid #e0e0e0', width: '100%' }}>
             <Typography variant="h6" gutterBottom sx={{ color: '#1976d2' }}>
               System Configuration
             </Typography>
             
-            {/* Inverter Capacity Input */}
+            {/* Inverter Capacity */}
             <Box sx={{ mb: 3 }}>
               <TextField
                 label="Inverter Capacity (kW)"
                 type="number"
                 value={inverterCapacity}
                 onChange={handleInverterCapacityChange}
-                inputProps={{ 
-                  step: "1", 
-                  min: "0",
-                  style: { width: '120px' }
-                }}
-                size="small"
+                fullWidth
+                inputProps={{ min: 0, step:1 }}
+                sx={{ width: { xs: '100%', md: '120px' } }}
               />
             </Box>
-            
-            {/* Battery Capacity Selection */}
-            <Box sx={{ mb: 3 }}>
+
+            {/* Battery Capacity Selection - Desktop */}
+            <Box sx={{ mb: 3, display: { xs: 'none', md: 'block' } }}>
               <FormControl component="fieldset" fullWidth>
                 <FormLabel component="legend">Battery Capacity (kWh)</FormLabel>
                 <RadioGroup
@@ -444,7 +451,7 @@ function App() {
                         alignItems: 'center',
                         '& .MuiFormControlLabel-label': {
                           marginTop: 2.5,
-                          marginLeft: '2px'
+                          marginLeft: '8px'
                         }
                       }}
                     />
@@ -452,7 +459,35 @@ function App() {
                 </RadioGroup>
               </FormControl>
             </Box>
-            
+
+            {/* Battery Capacity Selection - Mobile */}
+            <Box sx={{ mb: 3, display: { xs: 'block', md: 'none' } }}>
+              <FormLabel component="legend">Battery Capacity (kWh)</FormLabel>
+              <RadioGroup
+                name="batteryCapacity"
+                value={batteryCapacity.toString()}
+                onChange={handleBatteryCapacityChange}
+              >
+                {['5', '10', '15', '20', '25'].map(cap => (
+                  <FormControlLabel
+                    key={cap}
+                    value={cap}
+                    control={<Radio />}
+                    label={`${cap} kWh`}
+                    sx={{ 
+                      margin: 0,
+                      padding: '8px 0',
+                      width: '100%',
+                      '& .MuiFormControlLabel-label': {
+                        marginTop: 0,
+                        marginLeft: '8px'
+                      }
+                    }}
+                  />
+                ))}
+              </RadioGroup>
+            </Box>
+
             {/* Time-of-Day Slider */}
             <Box>
               <Typography gutterBottom>
@@ -470,40 +505,37 @@ function App() {
             </Box>
           </Paper>
 
-          {/* Appliance Controls */}
-          <Paper sx={{ p: 2, border: '1px solid #e0e0e0', width: '100%' }}>
+          {/* Appliance Controls - Desktop */}
+          <Paper sx={{ p: 2, border: '1px solid #e0e0e0', width: '100%', display: { xs: 'none', md: 'block' } }}>
             <Typography variant="h6" gutterBottom sx={{ color: '#1976d2' }}>
               Appliance Control
-            </Typography>
-            <Typography variant="body2" gutterBottom sx={{ color: 'text.secondary' }}>
-              Fridge is always on (0.1 kW)
             </Typography>
             <TableContainer>
               <Table size="small">
                 <TableHead>
                   <TableRow>
                     <TableCell>Appliance</TableCell>
-                    <TableCell>Power (kW)</TableCell>
-                    <TableCell colSpan={2} sx={{ borderLeft: '2px solid #e0e0e0' }}>Time Slot 1</TableCell>
-                    <TableCell colSpan={2} sx={{ borderLeft: '2px solid #e0e0e0' }}>Time Slot 2</TableCell>
+                    <TableCell>Power</TableCell>
+                    <TableCell colSpan={2} sx={{ textAlign: 'center', borderLeft: '2px solid #e0e0e0' }}>Time Slot 1</TableCell>
+                    <TableCell colSpan={2} sx={{ textAlign: 'center', borderLeft: '2px solid #e0e0e0' }}>Time Slot 2</TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell></TableCell>
                     <TableCell></TableCell>
-                    <TableCell sx={{ borderLeft: '2px solid #e0e0e0', textAlign: 'center' }}>ON</TableCell>
+                    <TableCell sx={{ textAlign: 'center' }}>ON</TableCell>
                     <TableCell sx={{ textAlign: 'center' }}>OFF</TableCell>
-                    <TableCell sx={{ borderLeft: '2px solid #e0e0e0', textAlign: 'center' }}>ON</TableCell>
-                    <TableCell sx={{ textAlign: 'center' }}>OFF</TableCell>
+                    <TableCell sx={{ textAlign: 'center', borderLeft: '2px solid #e0e0e0' }}>ON</TableCell>
+                    <TableCell sx={{ textAlign: 'center', borderLeft: '2px solid #e0e0e0' }}>OFF</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {Object.entries(APPLIANCE_LOADS).map(([name, power]) => (
+                  {Object.entries(appliances).map(([name, { enabled, schedule }]) => (
                     <TableRow key={name}>
                       <TableCell>
                         <FormControlLabel
                           control={
                             <Checkbox
-                              checked={appliances[name].enabled}
+                              checked={enabled}
                               onChange={() => handleApplianceToggle(name)}
                               color="primary"
                               sx={{ marginTop: 0 }}
@@ -518,50 +550,46 @@ function App() {
                               marginLeft: '2px'
                             },
                             '& .MuiCheckbox-root': {
-                              marginTop: -2.5
+                              marginTop: 0
                             }
                           }}
                         />
                       </TableCell>
-                      <TableCell>{power}</TableCell>
-                      <TableCell sx={{ borderLeft: '2px solid #e0e0e0' }}>
+                      <TableCell>{APPLIANCE_LOADS[name]} kW</TableCell>
+                      <TableCell sx={{ textAlign: 'center' }}>
                         <TextField
                           type="time"
-                          value={appliances[name].schedule.on1}
+                          value={schedule.on1}
                           onChange={(e) => handleScheduleChange(name, 'on1', e.target.value)}
                           size="small"
-                          InputLabelProps={{ shrink: true }}
-                          fullWidth
+                          sx={{ width: '100px' }}
                         />
                       </TableCell>
-                      <TableCell>
+                      <TableCell sx={{ textAlign: 'center' }}>
                         <TextField
                           type="time"
-                          value={appliances[name].schedule.off1}
+                          value={schedule.off1}
                           onChange={(e) => handleScheduleChange(name, 'off1', e.target.value)}
                           size="small"
-                          InputLabelProps={{ shrink: true }}
-                          fullWidth
+                          sx={{ width: '100px' }}
                         />
                       </TableCell>
-                      <TableCell sx={{ borderLeft: '2px solid #e0e0e0' }}>
+                      <TableCell sx={{ textAlign: 'center', borderLeft: '2px solid #e0e0e0' }}>
                         <TextField
                           type="time"
-                          value={appliances[name].schedule.on2}
+                          value={schedule.on2}
                           onChange={(e) => handleScheduleChange(name, 'on2', e.target.value)}
                           size="small"
-                          InputLabelProps={{ shrink: true }}
-                          fullWidth
+                          sx={{ width: '100px' }}
                         />
                       </TableCell>
-                      <TableCell>
+                      <TableCell sx={{ textAlign: 'center', borderLeft: '2px solid #e0e0e0' }}>
                         <TextField
                           type="time"
-                          value={appliances[name].schedule.off2}
+                          value={schedule.off2}
                           onChange={(e) => handleScheduleChange(name, 'off2', e.target.value)}
                           size="small"
-                          InputLabelProps={{ shrink: true }}
-                          fullWidth
+                          sx={{ width: '100px' }}
                         />
                       </TableCell>
                     </TableRow>
@@ -570,6 +598,85 @@ function App() {
               </Table>
             </TableContainer>
           </Paper>
+
+          {/* Appliance Controls - Mobile */}
+          <Box sx={{ display: { xs: 'block', md: 'none' } }}>
+            {Object.entries(appliances).map(([name, { enabled, schedule }]) => (
+              <Paper key={name} sx={{ p: 2, mb: 2, border: '1px solid #e0e0e0' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={enabled}
+                        onChange={() => handleApplianceToggle(name)}
+                        color="primary"
+                        sx={{ marginTop: 0 }}
+                      />
+                    }
+                    label={name}
+                    sx={{ 
+                      margin: 0,
+                      alignItems: 'center',
+                      '& .MuiFormControlLabel-label': {
+                        marginTop: 0,
+                        marginLeft: '2px'
+                      },
+                      '& .MuiCheckbox-root': {
+                        marginTop: 0
+                      }
+                    }}
+                  />
+                  <Typography sx={{ ml: 2 }}>{APPLIANCE_LOADS[name]} kW</Typography>
+                </Box>
+
+                {/* Time Slot 1 */}
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="subtitle2" gutterBottom>Time Slot 1</Typography>
+                  <Box sx={{ display: 'flex', gap: 2 }}>
+                    <TextField
+                      label="ON"
+                      type="time"
+                      value={schedule.on1}
+                      onChange={(e) => handleScheduleChange(name, 'on1', e.target.value)}
+                      fullWidth
+                      size="small"
+                    />
+                    <TextField
+                      label="OFF"
+                      type="time"
+                      value={schedule.off1}
+                      onChange={(e) => handleScheduleChange(name, 'off1', e.target.value)}
+                      fullWidth
+                      size="small"
+                    />
+                  </Box>
+                </Box>
+
+                {/* Time Slot 2 */}
+                <Box>
+                  <Typography variant="subtitle2" gutterBottom>Time Slot 2</Typography>
+                  <Box sx={{ display: 'flex', gap: 2 }}>
+                    <TextField
+                      label="ON"
+                      type="time"
+                      value={schedule.on2}
+                      onChange={(e) => handleScheduleChange(name, 'on2', e.target.value)}
+                      fullWidth
+                      size="small"
+                    />
+                    <TextField
+                      label="OFF"
+                      type="time"
+                      value={schedule.off2}
+                      onChange={(e) => handleScheduleChange(name, 'off2', e.target.value)}
+                      fullWidth
+                      size="small"
+                    />
+                  </Box>
+                </Box>
+              </Paper>
+            ))}
+          </Box>
         </Grid>
 
         {/* Right Column - Results and Visualization */}
@@ -624,7 +731,14 @@ function App() {
                 <Typography variant="h6" gutterBottom sx={{ color: '#1976d2' }}>
                   System Performance Over Time
                 </Typography>
-                <Box sx={{ width: '100%', height: '400px' }}>
+                <Box sx={{ 
+                  width: '100%', 
+                  height: { xs: '600px', md: '400px' },
+                  '& canvas': {
+                    width: '100% !important',
+                    height: '100% !important'
+                  }
+                }}>
                   <Line data={chartData} options={chartOptions} />
                 </Box>
               </Paper>
@@ -632,6 +746,24 @@ function App() {
           )}
         </Grid>
       </Grid>
+
+      {/* 3D House Visualization */}
+      <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
+        <Paper sx={{ p: 2, border: '1px solid #e0e0e0', width: '100%' }}>
+          <Typography variant="h6" gutterBottom sx={{ color: '#1976d2' }}>
+            House Visualization
+          </Typography>
+          <Box sx={{ 
+            width: '100%', 
+            height: '300px',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center'
+          }}>
+            {/* ... existing SVG house ... */}
+          </Box>
+        </Paper>
+      </Box>
     </Container>
   );
 }

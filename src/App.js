@@ -415,8 +415,7 @@ function App() {
   // Chart options with three y-axes
   const chartOptions = {
     responsive: true,
-    maintainAspectRatio: true,
-    aspectRatio: { xs: 1, md: 2 }, // 1:1 on mobile, 2:1 on desktop
+    maintainAspectRatio: false,
     animation: {
       duration: 0 // Disable animations for smoother updates
     },
@@ -781,12 +780,13 @@ function App() {
                 <Box sx={{ 
                   width: '100%', 
                   height: { xs: '500px', md: '400px' },
-                  '& canvas': {
-                    width: '100% !important',
-                    height: '100% !important'
-                  }
+                  position: 'relative'
                 }}>
-                  <Line data={chartData} options={chartOptions} />
+                  <Line 
+                    data={chartData} 
+                    options={chartOptions}
+                    key={`chart-${timeOfDay}`} // Add key to force remount
+                  />
                 </Box>
               </Paper>
             </Box>

@@ -346,39 +346,99 @@ function App() {
   // Chart options with three y-axes
   const chartOptions = {
     responsive: true,
+    maintainAspectRatio: true,
+    aspectRatio: 1,
     plugins: {
       legend: { 
         display: true,
         position: 'top',
+        align: 'center',
         labels: {
+          boxWidth: 12,
+          padding: 8,
+          font: {
+            size: 11
+          },
           filter: function(legendItem, data) {
             // Only show legend for the first three datasets (main data series)
             return legendItem.datasetIndex < 3;
           }
         }
       },
-      title: { display: true, text: 'SoC, Grid Import & Solar Production Over Time' },
+      title: { 
+        display: true, 
+        text: 'SoC, Grid Import & Solar Production Over Time',
+        font: {
+          size: 14
+        },
+        padding: {
+          bottom: 10
+        }
+      },
     },
     scales: {
+      x: {
+        grid: {
+          display: false
+        },
+        ticks: {
+          font: {
+            size: 11
+          }
+        }
+      },
       y1: {
         type: 'linear',
         position: 'left',
-        title: { display: true, text: 'Battery SoC (%)' },
+        title: { 
+          display: true, 
+          text: 'Battery SoC (%)',
+          font: {
+            size: 11
+          }
+        },
         min: 0,
         max: 100,
+        ticks: {
+          font: {
+            size: 11
+          }
+        }
       },
       y2: {
         type: 'linear',
         position: 'right',
-        title: { display: true, text: 'Grid Import (kWh)' },
+        title: { 
+          display: true, 
+          text: 'Grid Import (kWh)',
+          font: {
+            size: 11
+          }
+        },
         grid: { drawOnChartArea: false },
+        ticks: {
+          font: {
+            size: 11
+          }
+        }
       },
       y3: {
         type: 'linear',
         position: 'right',
-        title: { display: true, text: 'Solar Production (kW)' },
+        title: { 
+          display: true, 
+          text: 'Solar Production (kW)',
+          font: {
+            size: 11
+          }
+        },
         grid: { drawOnChartArea: false },
         offset: true,
+        ticks: {
+          font: {
+            size: 11
+          }
+        }
       },
     },
   };
@@ -736,8 +796,7 @@ function App() {
                   height: { xs: '500px', md: '400px' },
                   '& canvas': {
                     width: '100% !important',
-                    height: '100% !important',
-                    aspectRatio: '2/1'
+                    height: '100% !important'
                   }
                 }}>
                   <Line data={chartData} options={chartOptions} />

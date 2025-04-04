@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import './App.css';
+import { Container, Typography, Box, TextField, Slider, RadioGroup, FormControlLabel, Radio, FormLabel, FormControl, Checkbox, Grid, Paper } from '@mui/material';
 import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -11,6 +11,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import './App.css';
 
 ChartJS.register(
   CategoryScale,
@@ -57,7 +58,7 @@ function simulateDay(timeOfDay, inverterCapacity, batteryCapacity, appliancesSta
   const socArr = [];
   const gridImportArr = [];
   const consumptionArr = [];
-  const solarArr = []; // NEW: Array to record solar production
+  const solarArr = []; // Array to record solar production
   
   // Integrate over time from 0 to timeOfDay
   for (let t = 0; t <= timeOfDay; t += dt) {
@@ -72,7 +73,7 @@ function simulateDay(timeOfDay, inverterCapacity, batteryCapacity, appliancesSta
 
     // Solar production at time t
     const solar = solarProduction(t, inverterCapacity);
-    solarArr.push(solar); // RECORD SOLAR PRODUCTION for graphing
+    solarArr.push(solar); // Record solar production
     
     const netPower = solar - load; // kW (positive means excess solar)
     
@@ -87,7 +88,7 @@ function simulateDay(timeOfDay, inverterCapacity, batteryCapacity, appliancesSta
     } else {
       // Deficit: discharge battery to cover load (limited by a 5 kW rate)
       const deficitEnergy = (-netPower) * dt; // kWh needed
-      const maxDischargeEnergy = 5 * dt; // maximum energy that can be discharged in this time step (5 kW cap)
+      const maxDischargeEnergy = 5 * dt; // maximum energy that can be discharged in this dt (5 kW cap)
       const energyFromBattery = Math.min(deficitEnergy, batteryEnergy, maxDischargeEnergy);
       batteryEnergy -= energyFromBattery;
       const energyShortfall = deficitEnergy - energyFromBattery;
@@ -123,15 +124,15 @@ function simulateDay(timeOfDay, inverterCapacity, batteryCapacity, appliancesSta
     socArr,
     gridImportArr,
     consumptionArr,
-    solarArr, // NEW: Return solar production data
+    solarArr,
   };
 }
 
 function App() {
   // Component state
-  const [inverterCapacity, setInverterCapacity] = useState(5.0);
-  const [batteryCapacity, setBatteryCapacity] = useState(15);
-  const [timeOfDay, setTimeOfDay] = useState(0); // default: 12:00 (noon)
+  const [inverterCapacity, setInverterCapacity] = useState(3.0);
+  const [batteryCapacity, setBatteryCapacity] = useState(10);
+  const [timeOfDay, setTimeOfDay] = useState(12); // default: 12:00 (noon)
   const [appliances, setAppliances] = useState({
     TV: false,
     Oven: false,
@@ -144,16 +145,16 @@ function App() {
     if (!isNaN(value)) setInverterCapacity(value);
   };
   
-  const handleBatteryCapacityChange = (capacity) => {
-    setBatteryCapacity(capacity);
+  const handleBatteryCapacityChange = (event) => {
+    setBatteryCapacity(parseInt(event.target.value, 10));
   };
   
   const handleApplianceToggle = (name) => {
     setAppliances(prev => ({ ...prev, [name]: !prev[name] }));
   };
   
-  const handleTimeChange = (e) => {
-    setTimeOfDay(parseFloat(e.target.value));
+  const handleTimeChange = (event, newValue) => {
+    setTimeOfDay(newValue);
   };
   
   // Run the simulation from midnight to the selected time-of-day
@@ -166,7 +167,7 @@ function App() {
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
   };
   
-  // Prepare chart data if timeOfDay > 0 (if timeOfDay resets to 0, the graph is cleared)
+  // Prepare chart data if timeOfDay > 0 (graph resets at midnight)
   let chartData = null;
   if (timeOfDay > 0) {
     chartData = {
@@ -189,7 +190,7 @@ function App() {
           fill: false,
         },
         {
-          label: 'Solar Production (kW)',  // NEW DATASET
+          label: 'Solar Production (kW)',
           data: simulation.solarArr,
           borderColor: 'green',
           backgroundColor: 'green',
@@ -205,7 +206,7 @@ function App() {
     responsive: true,
     plugins: {
       legend: { position: 'top' },
-      title: { display: true, text: 'SoC, Cumulative Grid Import & Solar Production Over Time' },
+      title: { display: true, text: 'SoC, Grid Import & Solar Production Over Time' },
     },
     scales: {
       y1: {
@@ -221,7 +222,7 @@ function App() {
         title: { display: true, text: 'Grid Import (kWh)' },
         grid: { drawOnChartArea: false },
       },
-      y3: {  // NEW: Axis for Solar Production
+      y3: {
         type: 'linear',
         position: 'right',
         title: { display: true, text: 'Solar Production (kW)' },
@@ -232,93 +233,106 @@ function App() {
   };
   
   return (
-    <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-      <h1>Solar + Battery House Simulation</h1>
+    <Container maxWidth="md" sx={{ paddingTop: 4 }}>
+      <Typography variant="h4" align="center" gutterBottom>
+        Solar + Battery House Simulation
+      </Typography>
       
       {/* Inverter Capacity Input */}
-      <div>
-        <label>
-          Inverter Capacity (kW):{' '}
-          <input 
-            type="number" 
-            value={inverterCapacity} 
-            onChange={handleInverterCapacityChange} 
-            step="1" 
-            min=" "
-            style={{ padding: '5px', fontSize: '16px', width: '40px' }}
-          />
-        </label>
-      </div>
+      <Box sx={{ marginBottom: 3 }}>
+        <TextField
+          label="Inverter Capacity (kW)"
+          type="number"
+          value={inverterCapacity}
+          onChange={handleInverterCapacityChange}
+          inputProps={{ step: "0.1", min: "0" }}
+          sx={{ width: '200px' }}
+        />
+      </Box>
       
       {/* Battery Capacity Selection */}
-      <div>
-        <p>Battery Capacity (kWh):</p>
-        {[5, 10, 15, 20, 25].map(cap => (
-          <label key={cap} style={{ marginRight: '10px' }}>
-            <input 
-              type="radio" 
-              name="batteryCapacity" 
-              value={cap} 
-              checked={batteryCapacity === cap} 
-              onChange={() => handleBatteryCapacityChange(cap)} 
-            />
-            {cap} kWh
-          </label>
-        ))}
-      </div>
+      <Box sx={{ marginBottom: 3 }}>
+        <FormControl component="fieldset">
+          <FormLabel component="legend">Battery Capacity (kWh)</FormLabel>
+          <RadioGroup
+            row
+            name="batteryCapacity"
+            value={batteryCapacity.toString()}
+            onChange={handleBatteryCapacityChange}
+          >
+            {['5', '10', '15', '20', '25'].map(cap => (
+              <FormControlLabel
+                key={cap}
+                value={cap}
+                control={<Radio />}
+                label={`${cap} kWh`}
+              />
+            ))}
+          </RadioGroup>
+        </FormControl>
+      </Box>
       
       {/* Time-of-Day Slider */}
-      <div style={{ margin: '20px 0' }}>
-        <label>
+      <Box sx={{ marginBottom: 3 }}>
+        <Typography gutterBottom>
           Time of Day: {formatTime(timeOfDay)}
-          <br />
-          <input 
-            type="range" 
-            min="0" 
-            max="24" 
-            step="0.1" 
-            value={timeOfDay} 
-            onChange={handleTimeChange} 
-          />
-        </label>
-      </div>
+        </Typography>
+        <Slider
+          value={timeOfDay}
+          onChange={handleTimeChange}
+          min={0}
+          max={24}
+          step={0.1}
+          valueLabelDisplay="auto"
+        />
+      </Box>
       
       {/* Appliance Controls */}
-      <h2>Appliance Control</h2>
-      <p>Fridge is always on (0.1 kW)</p>
-      {Object.keys(appliances).map(name => (
-        <div key={name}>
-          <label>
-            <input 
-              type="checkbox" 
-              checked={appliances[name]} 
-              onChange={() => handleApplianceToggle(name)} 
+      <Box sx={{ marginBottom: 3 }}>
+        <Typography variant="h6">Appliance Control</Typography>
+        <Typography variant="body1">Fridge is always on (0.1 kW)</Typography>
+        {Object.keys(APPLIANCE_LOADS).map((name) => (
+          <Box key={name}>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={appliances[name]}
+                  onChange={() => handleApplianceToggle(name)}
+                />
+              }
+              label={`${name} (${APPLIANCE_LOADS[name]} kW)`}
             />
-            {name} ({APPLIANCE_LOADS[name]} kW)
-          </label>
-        </div>
-      ))}
+          </Box>
+        ))}
+      </Box>
       
       {/* Simulation Results */}
-      <h2>Simulation Results</h2>
-      <p>Time: {formatTime(timeOfDay)}</p>
-      <p>Solar Production (instantaneous): {simulation.currentSolar.toFixed(2)} kW</p>
-      <p>House Load (instantaneous): {simulation.currentLoad.toFixed(2)} kW</p>
-      <p>Battery SoC: {simulation.batterySoC.toFixed(1)}%</p>
-      <p>Battery Energy: {simulation.batteryEnergy.toFixed(2)} kWh</p>
-      <p>Cumulative Grid Import: {simulation.cumulativeGridImport.toFixed(2)} kWh</p>
-      <p>Cumulative Grid Export: {simulation.cumulativeGridExport.toFixed(2)} kWh</p>
-      <p>Cumulative House Consumption: {simulation.cumulativeHouseConsumption.toFixed(2)} kWh</p>
+      <Paper sx={{ padding: 2, marginBottom: 3 }}>
+        <Typography variant="h6">Simulation Results</Typography>
+        <Typography variant="body2">Time: {formatTime(timeOfDay)}</Typography>
+        <Typography variant="body2">Solar Production (instantaneous): {simulation.currentSolar.toFixed(2)} kW</Typography>
+        <Typography variant="body2">House Load (instantaneous): {simulation.currentLoad.toFixed(2)} kW</Typography>
+        <Typography variant="body2">Battery SoC: {simulation.batterySoC.toFixed(1)}%</Typography>
+        <Typography variant="body2">Battery Energy: {simulation.batteryEnergy.toFixed(2)} kWh</Typography>
+        <Typography variant="body2">Cumulative Grid Import: {simulation.cumulativeGridImport.toFixed(2)} kWh</Typography>
+        <Typography variant="body2">Cumulative Grid Export: {simulation.cumulativeGridExport.toFixed(2)} kWh</Typography>
+        <Typography variant="body2">Cumulative House Consumption: {simulation.cumulativeHouseConsumption.toFixed(2)} kWh</Typography>
+      </Paper>
       
+      {/* SVG System Diagram */}
+      <Box sx={{ marginBottom: 3 }}>
+        <Typography variant="h6">System Diagram</Typography>
+
+      </Box>
       
       {/* Graph Section: Only display if timeOfDay > 0 (graph resets at midnight) */}
       {timeOfDay > 0 && chartData && (
-        <div style={{ width: '700px', height: '700px', marginTop: '20px' }}>
-          <h2>SoC, Cumulative Grid Import & Solar Production Over Time</h2>
+        <Box sx={{ width: '700px', height: '700px', marginBottom: 3 }}>
+          <Typography variant="h6" align="center">SoC, Grid Import & Solar Production Over Time</Typography>
           <Line data={chartData} options={chartOptions} />
-        </div>
+        </Box>
       )}
-    </div>
+    </Container>
   );
 }
 

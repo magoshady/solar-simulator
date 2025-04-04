@@ -764,7 +764,13 @@ function App() {
                         onChange={() => handleApplianceToggle(name)}
                         color="primary"
                         size="small"
-                        sx={{ marginTop: 0 }}
+                        sx={{ 
+                          marginTop: 0,
+                          padding: '4px',
+                          '& .MuiSvgIcon-root': {
+                            fontSize: '1.25rem'
+                          }
+                        }}
                       />
                     }
                     label={name}
@@ -796,7 +802,16 @@ function App() {
                       onChange={(e) => handleScheduleChange(name, 'on1', e.target.value)}
                       fullWidth
                       size="small"
-                      InputLabelProps={{ shrink: true }}
+                      InputLabelProps={{ 
+                        shrink: true,
+                        sx: { 
+                          fontSize: '0.75rem',
+                          transform: 'translate(0, -1.5rem) scale(0.75)',
+                          '&.Mui-focused, &.MuiFormLabel-filled': {
+                            transform: 'translate(0, -1.5rem) scale(0.75)'
+                          }
+                        }
+                      }}
                     />
                     <TextField
                       label="OFF"
@@ -805,7 +820,16 @@ function App() {
                       onChange={(e) => handleScheduleChange(name, 'off1', e.target.value)}
                       fullWidth
                       size="small"
-                      InputLabelProps={{ shrink: true }}
+                      InputLabelProps={{ 
+                        shrink: true,
+                        sx: { 
+                          fontSize: '0.75rem',
+                          transform: 'translate(0, -1.5rem) scale(0.75)',
+                          '&.Mui-focused, &.MuiFormLabel-filled': {
+                            transform: 'translate(0, -1.5rem) scale(0.75)'
+                          }
+                        }
+                      }}
                     />
                   </Box>
                 </Box>
@@ -821,7 +845,16 @@ function App() {
                       onChange={(e) => handleScheduleChange(name, 'on2', e.target.value)}
                       fullWidth
                       size="small"
-                      InputLabelProps={{ shrink: true }}
+                      InputLabelProps={{ 
+                        shrink: true,
+                        sx: { 
+                          fontSize: '0.75rem',
+                          transform: 'translate(0, -1.5rem) scale(0.75)',
+                          '&.Mui-focused, &.MuiFormLabel-filled': {
+                            transform: 'translate(0, -1.5rem) scale(0.75)'
+                          }
+                        }
+                      }}
                     />
                     <TextField
                       label="OFF"
@@ -830,7 +863,16 @@ function App() {
                       onChange={(e) => handleScheduleChange(name, 'off2', e.target.value)}
                       fullWidth
                       size="small"
-                      InputLabelProps={{ shrink: true }}
+                      InputLabelProps={{ 
+                        shrink: true,
+                        sx: { 
+                          fontSize: '0.75rem',
+                          transform: 'translate(0, -1.5rem) scale(0.75)',
+                          '&.Mui-focused, &.MuiFormLabel-filled': {
+                            transform: 'translate(0, -1.5rem) scale(0.75)'
+                          }
+                        }
+                      }}
                     />
                   </Box>
                 </Box>

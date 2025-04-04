@@ -116,9 +116,8 @@ function isApplianceRunning(timeOfDay, schedule) {
   return false;
 }
 
-// Solar production function (in kW) using a bell curve that only produces power between sunrise and sunset.
+// Solar production function (in kW) using a bell curve
 function solarProduction(t, inverterCapacity) {
-  if (t < SUNRISE || t > SUNSET) return 0;
   const production = inverterCapacity * Math.exp(-Math.pow(t - PEAK_TIME, 2) / (2 * Math.pow(SIGMA, 2)));
   return production;
 }
@@ -139,8 +138,8 @@ function simulateDay(timeOfDay, inverterCapacity, batteryCapacity, appliancesSta
   const consumptionArr = [];
   const solarArr = []; // Array to record solar production
   
-  // Integrate over time from 0 to timeOfDay
-  for (let t = 0; t <= timeOfDay; t += dt) {
+  // Always simulate the full day (0 to 24)
+  for (let t = 0; t <= 24; t += dt) {
     // Calculate house load (fridge + any scheduled appliances)
     let load = FRIDGE_LOAD; // Start with just the fridge load
     Object.entries(appliancesState).forEach(([name, { enabled, schedule }]) => {
@@ -174,7 +173,7 @@ function simulateDay(timeOfDay, inverterCapacity, batteryCapacity, appliancesSta
       batteryEnergy -= energyFromBattery;
       const energyShortfall = deficitEnergy - energyFromBattery;
       cumulativeGridImport += energyShortfall;
-  }
+    }
     
     // Battery State of Charge (SoC)
     const batterySoC = (batteryEnergy / batteryCapacity) * 100;
@@ -186,6 +185,9 @@ function simulateDay(timeOfDay, inverterCapacity, batteryCapacity, appliancesSta
     consumptionArr.push(cumulativeHouseConsumption);
   }
   
+  // Find the index for the current time
+  const currentIndex = Math.round(timeOfDay / dt);
+  
   // Final instantaneous values at timeOfDay
   let finalLoad = FRIDGE_LOAD; // Start with just the fridge load
   Object.entries(appliancesState).forEach(([name, { enabled, schedule }]) => {
@@ -196,18 +198,19 @@ function simulateDay(timeOfDay, inverterCapacity, batteryCapacity, appliancesSta
   const finalSolar = solarProduction(timeOfDay, inverterCapacity);
   
   return {
-    batterySoC: (batteryEnergy / batteryCapacity) * 100,
+    batterySoC: socArr[currentIndex],
     batteryEnergy,
-    cumulativeGridImport,
+    cumulativeGridImport: gridImportArr[currentIndex],
     cumulativeGridExport,
     currentLoad: finalLoad,
     currentSolar: finalSolar,
-    cumulativeHouseConsumption,
+    cumulativeHouseConsumption: consumptionArr[currentIndex],
     times,
     socArr,
     gridImportArr,
     consumptionArr,
     solarArr,
+    currentIndex,
   };
 }
 
@@ -215,7 +218,7 @@ function App() {
   // Component state
   const [inverterCapacity, setInverterCapacity] = useState(5.0);
   const [batteryCapacity, setBatteryCapacity] = useState(10);
-  const [timeOfDay, setTimeOfDay] = useState(12); // default: 12:00 (noon)
+  const [timeOfDay, setTimeOfDay] = useState(0); // default: 00:00 (midnight)
   const [appliances, setAppliances] = useState({
     TV: { enabled: false, schedule: { ...DEFAULT_SCHEDULE } },
     Oven: { enabled: false, schedule: { ...DEFAULT_SCHEDULE } },
@@ -266,9 +269,9 @@ function App() {
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
   };
   
-  // Prepare chart data if timeOfDay > 0 (graph resets at midnight)
+  // Prepare chart data
   let chartData = null;
-  if (timeOfDay > 0) {
+  if (simulation.times.length > 0) {
     chartData = {
       labels: simulation.times.map(t => formatTime(t)),
       datasets: [
@@ -279,6 +282,9 @@ function App() {
           backgroundColor: 'blue',
           yAxisID: 'y1',
           fill: false,
+          borderWidth: 1,
+          pointRadius: 0,
+          pointHoverRadius: 0,
         },
         {
           label: 'Cumulative Grid Import (kWh)',
@@ -287,6 +293,9 @@ function App() {
           backgroundColor: 'red',
           yAxisID: 'y2',
           fill: false,
+          borderWidth: 1,
+          pointRadius: 0,
+          pointHoverRadius: 0,
         },
         {
           label: 'Solar Production (kW)',
@@ -295,6 +304,40 @@ function App() {
           backgroundColor: 'green',
           yAxisID: 'y3',
           fill: false,
+          borderWidth: 1,
+          pointRadius: 0,
+          pointHoverRadius: 0,
+        },
+        // Current time indicators
+        {
+          label: '',  // Empty label to hide from legend
+          data: simulation.times.map((t, i) => i === simulation.currentIndex ? simulation.socArr[i] : null),
+          borderColor: 'blue',
+          backgroundColor: 'blue',
+          yAxisID: 'y1',
+          pointRadius: 5,
+          pointHoverRadius: 7,
+          showLine: false,
+        },
+        {
+          label: '',  // Empty label to hide from legend
+          data: simulation.times.map((t, i) => i === simulation.currentIndex ? simulation.gridImportArr[i] : null),
+          borderColor: 'red',
+          backgroundColor: 'red',
+          yAxisID: 'y2',
+          pointRadius: 5,
+          pointHoverRadius: 7,
+          showLine: false,
+        },
+        {
+          label: '',  // Empty label to hide from legend
+          data: simulation.times.map((t, i) => i === simulation.currentIndex ? simulation.solarArr[i] : null),
+          borderColor: 'green',
+          backgroundColor: 'green',
+          yAxisID: 'y3',
+          pointRadius: 5,
+          pointHoverRadius: 7,
+          showLine: false,
         },
       ]
     };
@@ -396,6 +439,14 @@ function App() {
                       value={cap}
                       control={<Radio />}
                       label={`${cap} kWh`}
+                      sx={{ 
+                        margin: 0,
+                        alignItems: 'center',
+                        '& .MuiFormControlLabel-label': {
+                          marginTop: 2.5,
+                          marginLeft: '2px'
+                        }
+                      }}
                     />
                   ))}
                 </RadioGroup>
@@ -411,7 +462,7 @@ function App() {
                 value={timeOfDay}
                 onChange={handleTimeChange}
                 min={0}
-                max={24}
+                max={23.9167}
                 step={0.1}
                 valueLabelDisplay="auto"
                 sx={{ color: '#1976d2' }}
@@ -455,6 +506,7 @@ function App() {
                               checked={appliances[name].enabled}
                               onChange={() => handleApplianceToggle(name)}
                               color="primary"
+                              sx={{ marginTop: 0 }}
                             />
                           }
                           label={name}
@@ -462,8 +514,11 @@ function App() {
                             margin: 0,
                             alignItems: 'center',
                             '& .MuiFormControlLabel-label': {
-                              marginTop: 2.5,
-                              marginLeft: '8px'
+                              marginTop: 0,
+                              marginLeft: '2px'
+                            },
+                            '& .MuiCheckbox-root': {
+                              marginTop: -2.5
                             }
                           }}
                         />
@@ -520,56 +575,60 @@ function App() {
         {/* Right Column - Results and Visualization */}
         <Grid item xs={12} md={8}>
           {/* Simulation Results */}
-          <Paper sx={{ p: 2, mb: 3, border: '1px solid #e0e0e0', width: '100%' }}>
-            <Typography variant="h6" gutterBottom sx={{ color: '#1976d2' }}>
-              Simulation Results
-            </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="body2" color="text.secondary">Time</Typography>
-                <Typography variant="h6">{formatTime(timeOfDay)}</Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+            <Paper sx={{ p: 2, mb: 3, border: '1px solid #e0e0e0', width: '100%' }}>
+              <Typography variant="h6" gutterBottom sx={{ color: '#1976d2' }}>
+                Simulation Results
+              </Typography>
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="body2" color="text.secondary">Time</Typography>
+                  <Typography variant="h6">{formatTime(timeOfDay)}</Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="body2" color="text.secondary">Solar Production</Typography>
+                  <Typography variant="h6" color="success.main">{simulation.currentSolar.toFixed(2)} kW</Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="body2" color="text.secondary">House Load</Typography>
+                  <Typography variant="h6" color="error.main">{calculateCurrentLoad().toFixed(2)} kW</Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="body2" color="text.secondary">Battery SoC</Typography>
+                  <Typography variant="h6" color="primary.main">{simulation.batterySoC.toFixed(1)}%</Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="body2" color="text.secondary">Battery Energy</Typography>
+                  <Typography variant="h6">{simulation.batteryEnergy.toFixed(2)} kWh</Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="body2" color="text.secondary">Grid Import</Typography>
+                  <Typography variant="h6" color="error.main">{simulation.cumulativeGridImport.toFixed(2)} kWh</Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="body2" color="text.secondary">Grid Export</Typography>
+                  <Typography variant="h6" color="success.main">{simulation.cumulativeGridExport.toFixed(2)} kWh</Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="body2" color="text.secondary">House Consumption</Typography>
+                  <Typography variant="h6">{simulation.cumulativeHouseConsumption.toFixed(2)} kWh</Typography>
+                </Grid>
               </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="body2" color="text.secondary">Solar Production</Typography>
-                <Typography variant="h6" color="success.main">{simulation.currentSolar.toFixed(2)} kW</Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="body2" color="text.secondary">House Load</Typography>
-                <Typography variant="h6" color="error.main">{calculateCurrentLoad().toFixed(2)} kW</Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="body2" color="text.secondary">Battery SoC</Typography>
-                <Typography variant="h6" color="primary.main">{simulation.batterySoC.toFixed(1)}%</Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="body2" color="text.secondary">Battery Energy</Typography>
-                <Typography variant="h6">{simulation.batteryEnergy.toFixed(2)} kWh</Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="body2" color="text.secondary">Grid Import</Typography>
-                <Typography variant="h6" color="error.main">{simulation.cumulativeGridImport.toFixed(2)} kWh</Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="body2" color="text.secondary">Grid Export</Typography>
-                <Typography variant="h6" color="success.main">{simulation.cumulativeGridExport.toFixed(2)} kWh</Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="body2" color="text.secondary">House Consumption</Typography>
-                <Typography variant="h6">{simulation.cumulativeHouseConsumption.toFixed(2)} kWh</Typography>
-              </Grid>
-            </Grid>
-          </Paper>
+            </Paper>
+          </Box>
           
           {/* Graph Section */}
-          {timeOfDay > 0 && chartData && (
-            <Paper sx={{ p: 2, border: '1px solid #e0e0e0', width: '100%' }}>
-              <Typography variant="h6" gutterBottom sx={{ color: '#1976d2' }}>
-                System Performance Over Time
-              </Typography>
-              <Box sx={{ width: '100%', height: '400px' }}>
-                <Line data={chartData} options={chartOptions} />
-              </Box>
-            </Paper>
+          {chartData && (
+            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+              <Paper sx={{ p: 2, border: '1px solid #e0e0e0', width: '100%' }}>
+                <Typography variant="h6" gutterBottom sx={{ color: '#1976d2' }}>
+                  System Performance Over Time
+                </Typography>
+                <Box sx={{ width: '100%', height: '400px' }}>
+                  <Line data={chartData} options={chartOptions} />
+                </Box>
+              </Paper>
+            </Box>
           )}
         </Grid>
       </Grid>

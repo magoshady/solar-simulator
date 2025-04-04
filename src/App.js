@@ -782,7 +782,7 @@ function App() {
                       }
                     }}
                   />
-                  <Typography sx={{ ml: 1, mt: 3, fontSize: '0.875rem' }}>{APPLIANCE_LOADS[name]} kW</Typography>
+                  <Typography sx={{ ml: 1, mt: 2.31, fontSize: '0.875rem' }}>{APPLIANCE_LOADS[name]} kW</Typography>
                 </Box>
 
                 {/* Time Slot 1 */}

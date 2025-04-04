@@ -203,43 +203,8 @@ function App() {
       <p>Cumulative Grid Import: {simulation.cumulativeGridImport.toFixed(2)} kWh</p>
       <p>Cumulative Grid Export: {simulation.cumulativeGridExport.toFixed(2)} kWh</p>
       
-      {/* SVG System Diagram */}
+     <></> {/* SVG System Diagram */}
       <h2>System Diagram</h2>
-      <svg width="500" height="300" style={{ border: '1px solid #ccc' }}>
-        {/* 3D House Outline */}
-        <g id="house">
-          {/* House body */}
-          <rect x="200" y="150" width="200" height="100" fill="none" stroke="black" strokeWidth="2" />
-          {/* Roof (triangle) */}
-          <polygon points="200,150 300,100 400,150" fill="none" stroke="black" strokeWidth="2" />
-        </g>
-        {/* Solar Panels on the Roof */}
-        <g id="panels">
-          {/* Two panels */}
-          <rect x="220" y="110" width="40" height="20" fill="none" stroke="black" strokeWidth="2" />
-          <rect x="280" y="110" width="40" height="20" fill="none" stroke="black" strokeWidth="2" />
-          {/* Connecting lines from panels to inverter (see below) */}
-          <line x1="240" y1="130" x2="260" y2="170" stroke="black" strokeWidth="2" />
-          <line x1="300" y1="130" x2="280" y2="170" stroke="black" strokeWidth="2" />
-        </g>
-        {/* Battery attached to the house wall */}
-        <g id="battery">
-          <rect x="150" y="170" width="40" height="60" fill="none" stroke="black" strokeWidth="2" />
-          <text x="170" y="165" fontSize="10" textAnchor="middle">Battery</text>
-        </g>
-        {/* Inverter (30% size of battery) */}
-        <g id="inverter">
-          <rect x="110" y="190" width="12" height="18" fill="none" stroke="black" strokeWidth="2" />
-          <text x="116" y="185" fontSize="8" textAnchor="middle">Inv</text>
-        </g>
-        {/* Connecting lines */}
-        {/* Battery to Inverter */}
-        <line x1="150" y1="200" x2="122" y2="200" stroke="black" strokeWidth="2" />
-        {/* Inverter to House */}
-        <line x1="110" y1="200" x2="200" y2="200" stroke="black" strokeWidth="2" />
-        {/* Panels to Inverter */}
-        <line x1="260" y1="170" x2="110" y2="200" stroke="black" strokeWidth="2" />
-      </svg>
     </div>
   );
 }

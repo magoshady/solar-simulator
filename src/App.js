@@ -416,7 +416,7 @@ function App() {
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: true,
-    aspectRatio: 2, // Fixed 2:1 aspect ratio
+    aspectRatio: { xs: 1, md: 2 }, // 1:1 on mobile, 2:1 on desktop
     animation: {
       duration: 0 // Disable animations for smoother updates
     },
@@ -426,11 +426,13 @@ function App() {
         position: 'top',
         align: 'center',
         labels: {
-          boxWidth: 12,
-          padding: 8,
+          boxWidth: 8,
+          padding: 4,
           font: {
-            size: 11
+            size: 10
           },
+          usePointStyle: true,
+          pointStyle: 'circle',
           filter: function(legendItem, data) {
             // Only show legend for the first three datasets (main data series)
             return legendItem.datasetIndex < 3;
@@ -494,7 +496,7 @@ function App() {
           }
         },
         afterFit: (scaleInstance) => {
-          scaleInstance.width = 50;
+          scaleInstance.width = 40;
         }
       },
       y3: {
@@ -515,7 +517,7 @@ function App() {
           }
         },
         afterFit: (scaleInstance) => {
-          scaleInstance.width = 50;
+          scaleInstance.width = 40;
         }
       },
     },
@@ -710,37 +712,46 @@ function App() {
                 Simulation Results
               </Typography>
               <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="body2" color="text.secondary">Time</Typography>
-                  <Typography variant="h6">{formatTime(timeOfDay)}</Typography>
+                {/* Level A */}
+                <Grid item xs={12} container spacing={2}>
+                  <Grid item xs={4}>
+                    <Typography variant="body2" color="text.secondary">Time</Typography>
+                    <Typography variant="h6">{formatTime(timeOfDay)}</Typography>
+                  </Grid>
+                  <Grid item xs={4}>
+                    <Typography variant="body2" color="text.secondary">Solar Production</Typography>
+                    <Typography variant="h6" color="success.main">{simulation.currentSolar.toFixed(2)} kW</Typography>
+                  </Grid>
+                  <Grid item xs={4}>
+                    <Typography variant="body2" color="text.secondary">House Load</Typography>
+                    <Typography variant="h6" color="error.main">{calculateCurrentLoad().toFixed(2)} kW</Typography>
+                  </Grid>
                 </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="body2" color="text.secondary">Solar Production</Typography>
-                  <Typography variant="h6" color="success.main">{simulation.currentSolar.toFixed(2)} kW</Typography>
+                {/* Level B */}
+                <Grid item xs={12} container spacing={2}>
+                  <Grid item xs={4}>
+                    <Typography variant="body2" color="text.secondary">Battery SoC</Typography>
+                    <Typography variant="h6" color="primary.main">{simulation.batterySoC.toFixed(1)}%</Typography>
+                  </Grid>
+                  <Grid item xs={4}>
+                    <Typography variant="body2" color="text.secondary">Battery Energy</Typography>
+                    <Typography variant="h6">{simulation.batteryEnergy.toFixed(2)} kWh</Typography>
+                  </Grid>
+                  <Grid item xs={4}>
+                    <Typography variant="body2" color="text.secondary">Grid Import</Typography>
+                    <Typography variant="h6" color="error.main">{simulation.cumulativeGridImport.toFixed(2)} kWh</Typography>
+                  </Grid>
                 </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="body2" color="text.secondary">House Load</Typography>
-                  <Typography variant="h6" color="error.main">{calculateCurrentLoad().toFixed(2)} kW</Typography>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="body2" color="text.secondary">Battery SoC</Typography>
-                  <Typography variant="h6" color="primary.main">{simulation.batterySoC.toFixed(1)}%</Typography>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="body2" color="text.secondary">Battery Energy</Typography>
-                  <Typography variant="h6">{simulation.batteryEnergy.toFixed(2)} kWh</Typography>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="body2" color="text.secondary">Grid Import</Typography>
-                  <Typography variant="h6" color="error.main">{simulation.cumulativeGridImport.toFixed(2)} kWh</Typography>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="body2" color="text.secondary">Grid Export</Typography>
-                  <Typography variant="h6" color="success.main">{simulation.cumulativeGridExport.toFixed(2)} kWh</Typography>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="body2" color="text.secondary">House Consumption</Typography>
-                  <Typography variant="h6">{simulation.cumulativeHouseConsumption.toFixed(2)} kWh</Typography>
+                {/* Level C */}
+                <Grid item xs={12} container spacing={2}>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" color="text.secondary">Grid Export</Typography>
+                    <Typography variant="h6" color="success.main">{simulation.cumulativeGridExport.toFixed(2)} kWh</Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" color="text.secondary">House Consumption</Typography>
+                    <Typography variant="h6">{simulation.cumulativeHouseConsumption.toFixed(2)} kWh</Typography>
+                  </Grid>
                 </Grid>
               </Grid>
             </Paper>
@@ -769,7 +780,7 @@ function App() {
                 </Typography>
                 <Box sx={{ 
                   width: '100%', 
-                  height: { xs: '300px', md: '400px' },
+                  height: { xs: '500px', md: '400px' },
                   '& canvas': {
                     width: '100% !important',
                     height: '100% !important'
@@ -780,6 +791,85 @@ function App() {
               </Paper>
             </Box>
           )}
+
+          {/* Appliance Controls - Mobile */}
+          <Box sx={{ display: { xs: 'block', md: 'none' } }}>
+            {Object.entries(appliances).map(([name, { enabled, schedule }]) => (
+              <Paper key={name} sx={{ p: 2, mb: 2, border: '1px solid #e0e0e0' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={enabled}
+                        onChange={() => handleApplianceToggle(name)}
+                        color="primary"
+                        sx={{ marginTop: 0 }}
+                      />
+                    }
+                    label={name}
+                    sx={{ 
+                      margin: 0,
+                      alignItems: 'center',
+                      '& .MuiFormControlLabel-label': {
+                        marginTop: 0,
+                        marginLeft: '2px'
+                      },
+                      '& .MuiCheckbox-root': {
+                        marginTop: 0
+                      }
+                    }}
+                  />
+                  <Typography sx={{ ml: 2 }}>{APPLIANCE_LOADS[name]} kW</Typography>
+                </Box>
+
+                {/* Time Slot 1 */}
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="subtitle2" gutterBottom>Time Slot 1</Typography>
+                  <Box sx={{ display: 'flex', gap: 2 }}>
+                    <TextField
+                      label="ON"
+                      type="time"
+                      value={schedule.on1}
+                      onChange={(e) => handleScheduleChange(name, 'on1', e.target.value)}
+                      fullWidth
+                      size="small"
+                    />
+                    <TextField
+                      label="OFF"
+                      type="time"
+                      value={schedule.off1}
+                      onChange={(e) => handleScheduleChange(name, 'off1', e.target.value)}
+                      fullWidth
+                      size="small"
+                    />
+                  </Box>
+                </Box>
+
+                {/* Time Slot 2 */}
+                <Box>
+                  <Typography variant="subtitle2" gutterBottom>Time Slot 2</Typography>
+                  <Box sx={{ display: 'flex', gap: 2 }}>
+                    <TextField
+                      label="ON"
+                      type="time"
+                      value={schedule.on2}
+                      onChange={(e) => handleScheduleChange(name, 'on2', e.target.value)}
+                      fullWidth
+                      size="small"
+                    />
+                    <TextField
+                      label="OFF"
+                      type="time"
+                      value={schedule.off2}
+                      onChange={(e) => handleScheduleChange(name, 'off2', e.target.value)}
+                      fullWidth
+                      size="small"
+                    />
+                  </Box>
+                </Box>
+              </Paper>
+            ))}
+          </Box>
         </Grid>
       </Grid>
     </Container>

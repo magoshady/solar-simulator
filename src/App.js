@@ -425,7 +425,7 @@ function App() {
                 value={inverterCapacity}
                 onChange={handleInverterCapacityChange}
                 fullWidth
-                inputProps={{ min: 0, step:1 }}
+                inputProps={{ min: 0, step: 1 }}
                 sx={{ width: { xs: '100%', md: '120px' } }}
               />
             </Box>
@@ -733,10 +733,11 @@ function App() {
                 </Typography>
                 <Box sx={{ 
                   width: '100%', 
-                  height: { xs: '600px', md: '400px' },
+                  height: { xs: '500px', md: '400px' },
                   '& canvas': {
                     width: '100% !important',
-                    height: '100% !important'
+                    height: '100% !important',
+                    aspectRatio: '2/1'
                   }
                 }}>
                   <Line data={chartData} options={chartOptions} />
@@ -746,24 +747,6 @@ function App() {
           )}
         </Grid>
       </Grid>
-
-      {/* 3D House Visualization */}
-      <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
-        <Paper sx={{ p: 2, border: '1px solid #e0e0e0', width: '100%' }}>
-          <Typography variant="h6" gutterBottom sx={{ color: '#1976d2' }}>
-            House Visualization
-          </Typography>
-          <Box sx={{ 
-            width: '100%', 
-            height: '300px',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center'
-          }}>
-            {/* ... existing SVG house ... */}
-          </Box>
-        </Paper>
-      </Box>
     </Container>
   );
 }

@@ -1,12 +1,8 @@
-@keyframes flow {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(180px);
-  }
+body {
+  margin: 100;
+  padding: 150;
 }
 
-.electricity {
-  animation: flow 2s linear infinite;
+svg {
+  margin-top: 20px;
 }

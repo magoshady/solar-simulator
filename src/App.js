@@ -434,7 +434,9 @@ function App() {
           boxWidth: 8,
           padding: 4,
           font: {
-            size: 10
+            size: 10,
+            family: "'Roboto', 'Helvetica', 'Arial', sans-serif",
+            color: '#ffffff'
           },
           usePointStyle: true,
           pointStyle: 'circle',
@@ -447,7 +449,10 @@ function App() {
         display: true, 
         text: 'SoC, Grid Import & Solar Production Over Time',
         font: {
-          size: 14
+          size: 14,
+          family: "'Roboto', 'Helvetica', 'Arial', sans-serif",
+          weight: 500,
+          color: '#4CAF50'
         },
         padding: {
           bottom: 10
@@ -458,11 +463,14 @@ function App() {
       x: {
         grid: {
           display: true,
-          color: 'rgba(0, 0, 0, 0.1)'
+          color: 'rgba(255, 255, 255, 0.1)',
+          drawBorder: false
         },
         ticks: {
           font: {
-            size: 11
+            size: 11,
+            family: "'Roboto', 'Helvetica', 'Arial', sans-serif",
+            color: '#ffffff'
           },
           maxRotation: 45,
           minRotation: 45,
@@ -479,14 +487,19 @@ function App() {
           display: true,
           text: 'Battery SoC (%)',
           font: {
-            size: 11
-          }
+            size: 11,
+            family: "'Roboto', 'Helvetica', 'Arial', sans-serif",
+            weight: 500,
+            color: '#ffffff'
+          },
+          color: '#2E7D32'
         },
         min: 0,
         max: 100,
         grid: {
           display: true,
-          color: 'rgba(0, 0, 0, 0.1)'
+          color: 'rgba(255, 255, 255, 0.1)',
+          drawBorder: false
         },
         ticks: {
           display: false
@@ -503,7 +516,8 @@ function App() {
         },
         grid: { 
           display: true,
-          color: 'rgba(0, 0, 0, 0.1)'
+          color: 'rgba(255, 255, 255, 0.1)',
+          drawBorder: false
         },
         ticks: {
           display: false
@@ -519,12 +533,17 @@ function App() {
           display: true,
           text: 'Solar Production (kW)',
           font: {
-            size: 11
-          }
+            size: 11,
+            family: "'Roboto', 'Helvetica', 'Arial', sans-serif",
+            weight: 500,
+            color: '#ffffff'
+          },
+          color: '#1976D2'
         },
         grid: { 
           display: true,
-          color: 'rgba(0, 0, 0, 0.1)'
+          color: 'rgba(255, 255, 255, 0.1)',
+          drawBorder: false
         },
         ticks: {
           display: false
@@ -552,9 +571,13 @@ function App() {
   };
   
   return (
-    <Container maxWidth="lg" sx={{ paddingTop: 4 }}>
+    <Container maxWidth="lg" sx={{ 
+      paddingTop: 4,
+      bgcolor: '#121212',
+      minHeight: '100vh'
+    }}>
       <Typography variant="h4" align="center" gutterBottom sx={{ 
-        color: '#1976d2',
+        color: '#CBF7DA',
         fontWeight: 'bold',
         mb: 4
       }}>
@@ -564,30 +587,59 @@ function App() {
       <Grid container spacing={3}>
         {/* Left Column - Controls */}
         <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 2, mb: 3, border: '1px solid #e0e0e0', width: '100%' }}>
-            <Typography variant="h6" gutterBottom sx={{ color: '#1976d2' }}>
+          <Paper sx={{ 
+            p: 2, 
+            mb: 3, 
+            border: '1px solid #333', 
+            width: '100%',
+            bgcolor: '#1E1E1E'
+          }}>
+            <Typography variant="h6" gutterBottom sx={{ color: '#CBF7DA' }}>
               System Configuration
-      </Typography>
+            </Typography>
       
-      {/* Inverter Capacity Input */}
+            {/* Inverter Capacity Input */}
             <Box sx={{ mb: 3 }}>
-        <TextField
-          label="Inverter Capacity (kW)"
-          type="number"
-          value={inverterCapacity}
-          onChange={handleInverterCapacityChange}
+              <TextField
+                label="Inverter Capacity (kW)"
+                type="number"
+                value={inverterCapacity}
+                onChange={handleInverterCapacityChange}
                 inputProps={{ 
                   step: "1", 
                   min: "0",
                   style: { width: '120px' }
                 }}
                 size="small"
-        />
-      </Box>
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': {
+                      borderColor: '#333',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: '#CBF7DA',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#CBF7DA',
+                    },
+                    color: '#ffffff',
+                    '& input': {
+                      color: '#ffffff',
+                    },
+                  },
+                  '& .MuiInputLabel-root': {
+                    color: '#ffffff',
+                    '&.Mui-focused': {
+                      color: '#CBF7DA',
+                    },
+                  },
+                }}
+              />
+            </Box>
       
             {/* Battery Capacity Selection - Mobile */}
             <Box sx={{ mb: 3, display: { xs: 'block', md: 'none' } }}>
-              <FormLabel component="legend">Battery Capacity (kWh)</FormLabel>
+              <FormLabel component="legend" sx={{ color: '#ffffff' }}>Battery Capacity (kWh)</FormLabel>
               <RadioGroup
                 name="batteryCapacity"
                 value={batteryCapacity.toString()}
@@ -597,12 +649,13 @@ function App() {
                   <FormControlLabel
                     key={cap}
                     value={cap}
-                    control={<Radio />}
+                    control={<Radio sx={{ color: '#CBF7DA' }} />}
                     label={`${cap} kWh`}
                     sx={{ 
                       margin: 0,
                       padding: '8px 0',
                       width: '100%',
+                      color: '#ffffff',
                       '& .MuiFormControlLabel-label': {
                         marginTop: 0,
                         marginLeft: '2px'
@@ -619,22 +672,23 @@ function App() {
 
             {/* Battery Capacity Selection - Desktop */}
             <Box sx={{ mb: 3, display: { xs: 'none', md: 'block' } }}>
-          <FormLabel component="legend">Battery Capacity (kWh)</FormLabel>
-          <RadioGroup
-            row
-            name="batteryCapacity"
-            value={batteryCapacity.toString()}
-            onChange={handleBatteryCapacityChange}
-          >
-            {['5', '10', '15', '20', '25'].map(cap => (
-              <FormControlLabel
-                key={cap}
-                value={cap}
-                control={<Radio />}
-                label={`${cap} kWh`}
+              <FormLabel component="legend" sx={{ color: '#ffffff' }}>Battery Capacity (kWh)</FormLabel>
+              <RadioGroup
+                row
+                name="batteryCapacity"
+                value={batteryCapacity.toString()}
+                onChange={handleBatteryCapacityChange}
+              >
+                {['5', '10', '15', '20', '25'].map(cap => (
+                  <FormControlLabel
+                    key={cap}
+                    value={cap}
+                    control={<Radio sx={{ color: '#CBF7DA' }} />}
+                    label={`${cap} kWh`}
                     sx={{ 
                       margin: 0,
                       padding: '8px 16px',
+                      color: '#ffffff',
                       '& .MuiFormControlLabel-label': {
                         marginTop: 2,
                         marginLeft: '2px'
@@ -644,36 +698,42 @@ function App() {
                         marginRight: '2px'
                       }
                     }}
-              />
-            ))}
-          </RadioGroup>
+                  />
+                ))}
+              </RadioGroup>
             </Box>
           </Paper>
 
           {/* Appliance Controls - Desktop */}
-          <Paper sx={{ p: 2, border: '1px solid #e0e0e0', width: '100%', display: { xs: 'none', md: 'block' } }}>
-            <Typography variant="h6" gutterBottom sx={{ color: '#1976d2' }}>
+          <Paper sx={{ 
+            p: 2, 
+            border: '1px solid #333', 
+            width: '100%', 
+            display: { xs: 'none', md: 'block' },
+            bgcolor: '#1E1E1E'
+          }}>
+            <Typography variant="h6" gutterBottom sx={{ color: '#CBF7DA' }}>
               Appliance Control
             </Typography>
-            <Typography variant="body2" gutterBottom sx={{ color: 'text.secondary' }}>
+            <Typography variant="body2" gutterBottom sx={{ color: '#ffffff' }}>
               Fridge is always on (0.1 kW)
             </Typography>
             <TableContainer>
               <Table size="small">
                 <TableHead>
                   <TableRow>
-                    <TableCell>Appliance</TableCell>
-                    <TableCell>Power (kW)</TableCell>
-                    <TableCell colSpan={2} sx={{ borderLeft: '2px solid #e0e0e0' }}>Time Slot 1</TableCell>
-                    <TableCell colSpan={2} sx={{ borderLeft: '2px solid #e0e0e0' }}>Time Slot 2</TableCell>
+                    <TableCell sx={{ color: '#ffffff' }}>Appliance</TableCell>
+                    <TableCell sx={{ color: '#ffffff' }}>Power (kW)</TableCell>
+                    <TableCell colSpan={2} sx={{ borderLeft: '2px solid #333', color: '#ffffff' }}>Time Slot 1</TableCell>
+                    <TableCell colSpan={2} sx={{ borderLeft: '2px solid #333', color: '#ffffff' }}>Time Slot 2</TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell></TableCell>
                     <TableCell></TableCell>
-                    <TableCell sx={{ borderLeft: '2px solid #e0e0e0', textAlign: 'center' }}>ON</TableCell>
-                    <TableCell sx={{ textAlign: 'center' }}>OFF</TableCell>
-                    <TableCell sx={{ borderLeft: '2px solid #e0e0e0', textAlign: 'center' }}>ON</TableCell>
-                    <TableCell sx={{ textAlign: 'center' }}>OFF</TableCell>
+                    <TableCell sx={{ borderLeft: '2px solid #333', textAlign: 'center', color: '#ffffff' }}>ON</TableCell>
+                    <TableCell sx={{ textAlign: 'center', color: '#ffffff' }}>OFF</TableCell>
+                    <TableCell sx={{ borderLeft: '2px solid #333', textAlign: 'center', color: '#ffffff' }}>ON</TableCell>
+                    <TableCell sx={{ textAlign: 'center', color: '#ffffff' }}>OFF</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -685,13 +745,19 @@ function App() {
                             <Checkbox
                               checked={appliances[name].enabled}
                               onChange={() => handleApplianceToggle(name)}
-                              color="primary"
-                              sx={{ marginTop: 0 }}
+                              sx={{ 
+                                color: '#CBF7DA',
+                                '&.Mui-checked': {
+                                  color: '#CBF7DA',
+                                },
+                                marginTop: 0 
+                              }}
                             />
                           }
                           label={name}
                           sx={{ 
                             margin: 0,
+                            color: '#ffffff',
                             alignItems: 'center',
                             '& .MuiFormControlLabel-label': {
                               marginTop: 0,
@@ -703,8 +769,8 @@ function App() {
                           }}
                         />
                       </TableCell>
-                      <TableCell>{power}</TableCell>
-                      <TableCell sx={{ borderLeft: '2px solid #e0e0e0' }}>
+                      <TableCell sx={{ color: '#ffffff' }}>{power}</TableCell>
+                      <TableCell sx={{ borderLeft: '2px solid #333' }}>
                         <TextField
                           type="time"
                           value={appliances[name].schedule.on1}
@@ -712,6 +778,29 @@ function App() {
                           size="small"
                           InputLabelProps={{ shrink: true }}
                           fullWidth
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              '& fieldset': {
+                                borderColor: '#333',
+                              },
+                              '&:hover fieldset': {
+                                borderColor: '#CBF7DA',
+                              },
+                              '&.Mui-focused fieldset': {
+                                borderColor: '#CBF7DA',
+                              },
+                              color: '#ffffff',
+                              '& input': {
+                                color: '#ffffff',
+                              },
+                            },
+                            '& .MuiInputLabel-root': {
+                              color: '#ffffff',
+                              '&.Mui-focused': {
+                                color: '#CBF7DA',
+                              },
+                            },
+                          }}
                         />
                       </TableCell>
                       <TableCell>
@@ -722,9 +811,32 @@ function App() {
                           size="small"
                           InputLabelProps={{ shrink: true }}
                           fullWidth
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              '& fieldset': {
+                                borderColor: '#333',
+                              },
+                              '&:hover fieldset': {
+                                borderColor: '#CBF7DA',
+                              },
+                              '&.Mui-focused fieldset': {
+                                borderColor: '#CBF7DA',
+                              },
+                              color: '#ffffff',
+                              '& input': {
+                                color: '#ffffff',
+                              },
+                            },
+                            '& .MuiInputLabel-root': {
+                              color: '#ffffff',
+                              '&.Mui-focused': {
+                                color: '#CBF7DA',
+                              },
+                            },
+                          }}
                         />
                       </TableCell>
-                      <TableCell sx={{ borderLeft: '2px solid #e0e0e0' }}>
+                      <TableCell sx={{ borderLeft: '2px solid #333' }}>
                         <TextField
                           type="time"
                           value={appliances[name].schedule.on2}
@@ -732,6 +844,29 @@ function App() {
                           size="small"
                           InputLabelProps={{ shrink: true }}
                           fullWidth
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              '& fieldset': {
+                                borderColor: '#333',
+                              },
+                              '&:hover fieldset': {
+                                borderColor: '#CBF7DA',
+                              },
+                              '&.Mui-focused fieldset': {
+                                borderColor: '#CBF7DA',
+                              },
+                              color: '#ffffff',
+                              '& input': {
+                                color: '#ffffff',
+                              },
+                            },
+                            '& .MuiInputLabel-root': {
+                              color: '#ffffff',
+                              '&.Mui-focused': {
+                                color: '#CBF7DA',
+                              },
+                            },
+                          }}
                         />
                       </TableCell>
                       <TableCell>
@@ -742,6 +877,29 @@ function App() {
                           size="small"
                           InputLabelProps={{ shrink: true }}
                           fullWidth
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              '& fieldset': {
+                                borderColor: '#333',
+                              },
+                              '&:hover fieldset': {
+                                borderColor: '#CBF7DA',
+                              },
+                              '&.Mui-focused fieldset': {
+                                borderColor: '#CBF7DA',
+                              },
+                              color: '#ffffff',
+                              '& input': {
+                                color: '#ffffff',
+                              },
+                            },
+                            '& .MuiInputLabel-root': {
+                              color: '#ffffff',
+                              '&.Mui-focused': {
+                                color: '#CBF7DA',
+                              },
+                            },
+                          }}
                         />
                       </TableCell>
                     </TableRow>
@@ -756,33 +914,44 @@ function App() {
         <Grid item xs={12} md={8}>
           {/* Appliance Controls - Mobile */}
           <Box sx={{ display: { xs: 'block', md: 'none' }, mb: 3 }}>
-            <Typography variant="h6" gutterBottom sx={{ color: '#1976d2' }}>
+            <Typography variant="h6" gutterBottom sx={{ color: '#CBF7DA' }}>
               Appliance Control
             </Typography>
-            <Typography variant="body2" gutterBottom sx={{ color: 'text.secondary', mb: 2 }}>
+            <Typography variant="body2" gutterBottom sx={{ color: '#ffffff', mb: 2 }}>
               Fridge is always on (0.1 kW)
             </Typography>
             {Object.entries(appliances).map(([name, { enabled, schedule }]) => (
-              <Paper key={name} sx={{ p: 1.5, mb: 1.5, border: '1px solid #e0e0e0' }}>
+              <Paper key={name} sx={{ 
+                p: 1.5, 
+                mb: 1.5, 
+                border: '1px solid #333',
+                bgcolor: '#1E1E1E'
+              }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                   <FormControlLabel
                     control={
                       <Checkbox
                         checked={enabled}
                         onChange={() => handleApplianceToggle(name)}
-                        color="primary"
+                        sx={{ 
+                          color: '#CBF7DA',
+                          '&.Mui-checked': {
+                            color: '#CBF7DA',
+                          },
+                          marginTop: 0 
+                        }}
                         size="small"
-                        sx={{ marginTop: 0 }}
                       />
                     }
                     label={name}
                     sx={{ 
                       margin: 0,
+                      color: '#ffffff',
                       alignItems: 'center',
                       '& .MuiFormControlLabel-label': {
                         marginTop: 2.5,
                         marginLeft: '2px',
-                       fontSize: '0.875rem'
+                        fontSize: '0.875rem'
                       },
                       '& .MuiCheckbox-root': {
                         marginTop: 0,
@@ -790,12 +959,12 @@ function App() {
                       }
                     }}
                   />
-                  <Typography sx={{ ml: 1, mt: 2.31, fontSize: '0.875rem' }}>{APPLIANCE_LOADS[name]} kW</Typography>
+                  <Typography sx={{ ml: 1, mt: 2.31, fontSize: '0.875rem', color: '#ffffff' }}>{APPLIANCE_LOADS[name]} kW</Typography>
                 </Box>
 
                 {/* Time Slot 1 */}
                 <Box sx={{ mb: 1 }}>
-                  <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5 }}>Time Slot 1</Typography>
+                  <Typography variant="caption" sx={{ color: '#ffffff', display: 'block', mb: 0.5 }}>Time Slot 1</Typography>
                   <Box sx={{ display: 'flex', gap: 1 }}>
                     <TextField
                       label="ON"
@@ -805,6 +974,29 @@ function App() {
                       fullWidth
                       size="small"
                       InputLabelProps={{ shrink: true }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          '& fieldset': {
+                            borderColor: '#333',
+                          },
+                          '&:hover fieldset': {
+                            borderColor: '#CBF7DA',
+                          },
+                          '&.Mui-focused fieldset': {
+                            borderColor: '#CBF7DA',
+                          },
+                          color: '#ffffff',
+                          '& input': {
+                            color: '#ffffff',
+                          },
+                        },
+                        '& .MuiInputLabel-root': {
+                          color: '#ffffff',
+                          '&.Mui-focused': {
+                            color: '#CBF7DA',
+                          },
+                        },
+                      }}
                     />
                     <TextField
                       label="OFF"
@@ -814,13 +1006,36 @@ function App() {
                       fullWidth
                       size="small"
                       InputLabelProps={{ shrink: true }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          '& fieldset': {
+                            borderColor: '#333',
+                          },
+                          '&:hover fieldset': {
+                            borderColor: '#CBF7DA',
+                          },
+                          '&.Mui-focused fieldset': {
+                            borderColor: '#CBF7DA',
+                          },
+                          color: '#ffffff',
+                          '& input': {
+                            color: '#ffffff',
+                          },
+                        },
+                        '& .MuiInputLabel-root': {
+                          color: '#ffffff',
+                          '&.Mui-focused': {
+                            color: '#CBF7DA',
+                          },
+                        },
+                      }}
                     />
                   </Box>
                 </Box>
 
                 {/* Time Slot 2 */}
                 <Box>
-                  <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5 }}>Time Slot 2</Typography>
+                  <Typography variant="caption" sx={{ color: '#ffffff', display: 'block', mb: 0.5 }}>Time Slot 2</Typography>
                   <Box sx={{ display: 'flex', gap: 1 }}>
                     <TextField
                       label="ON"
@@ -830,6 +1045,29 @@ function App() {
                       fullWidth
                       size="small"
                       InputLabelProps={{ shrink: true }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          '& fieldset': {
+                            borderColor: '#333',
+                          },
+                          '&:hover fieldset': {
+                            borderColor: '#CBF7DA',
+                          },
+                          '&.Mui-focused fieldset': {
+                            borderColor: '#CBF7DA',
+                          },
+                          color: '#ffffff',
+                          '& input': {
+                            color: '#ffffff',
+                          },
+                        },
+                        '& .MuiInputLabel-root': {
+                          color: '#ffffff',
+                          '&.Mui-focused': {
+                            color: '#CBF7DA',
+                          },
+                        },
+                      }}
                     />
                     <TextField
                       label="OFF"
@@ -839,6 +1077,29 @@ function App() {
                       fullWidth
                       size="small"
                       InputLabelProps={{ shrink: true }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          '& fieldset': {
+                            borderColor: '#333',
+                          },
+                          '&:hover fieldset': {
+                            borderColor: '#CBF7DA',
+                          },
+                          '&.Mui-focused fieldset': {
+                            borderColor: '#CBF7DA',
+                          },
+                          color: '#ffffff',
+                          '& input': {
+                            color: '#ffffff',
+                          },
+                        },
+                        '& .MuiInputLabel-root': {
+                          color: '#ffffff',
+                          '&.Mui-focused': {
+                            color: '#CBF7DA',
+                          },
+                        },
+                      }}
                     />
                   </Box>
                 </Box>
@@ -848,82 +1109,106 @@ function App() {
 
           {/* Simulation Results */}
           <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-            <Paper sx={{ p: 2, mb: 3, border: '1px solid #e0e0e0', width: '100%' }}>
-              <Typography variant="h6" gutterBottom sx={{ color: '#1976d2' }}>
+            <Paper sx={{ 
+              p: 2, 
+              mb: 3, 
+              border: '1px solid #333', 
+              width: '100%',
+              bgcolor: '#1E1E1E'
+            }}>
+              <Typography variant="h6" gutterBottom sx={{ color: '#CBF7DA' }}>
                 Simulation Results
               </Typography>
               <Grid container spacing={2}>
                 {/* Level A */}
                 <Grid item xs={12} container spacing={2}>
                   <Grid item xs={4}>
-                    <Typography variant="body2" color="text.secondary">Time</Typography>
-                    <Typography variant="h6">{formatTime(timeOfDay)}</Typography>
+                    <Typography variant="body2" sx={{ color: '#ffffff' }}>Time</Typography>
+                    <Typography variant="h6" sx={{ color: '#ffffff' }}>{formatTime(timeOfDay)}</Typography>
                   </Grid>
                   <Grid item xs={4}>
-                    <Typography variant="body2" color="text.secondary">Solar Production</Typography>
-                    <Typography variant="h6" color="success.main">{simulation.currentSolar.toFixed(2)} kW</Typography>
+                    <Typography variant="body2" sx={{ color: '#ffffff' }}>Solar Production</Typography>
+                    <Typography variant="h6" sx={{ color: '#CBF7DA' }}>{simulation.currentSolar.toFixed(2)} kW</Typography>
                   </Grid>
                   <Grid item xs={4}>
-                    <Typography variant="body2" color="text.secondary">House Load</Typography>
-                    <Typography variant="h6" color="error.main">{calculateCurrentLoad().toFixed(2)} kW</Typography>
+                    <Typography variant="body2" sx={{ color: '#ffffff' }}>House Load</Typography>
+                    <Typography variant="h6" sx={{ color: '#D32F2F' }}>{calculateCurrentLoad().toFixed(2)} kW</Typography>
                   </Grid>
                 </Grid>
                 {/* Level B */}
                 <Grid item xs={12} container spacing={2}>
                   <Grid item xs={4}>
-                    <Typography variant="body2" color="text.secondary">Battery SoC</Typography>
-                    <Typography variant="h6" color="primary.main">{simulation.batterySoC.toFixed(1)}%</Typography>
+                    <Typography variant="body2" sx={{ color: '#ffffff' }}>Battery SoC</Typography>
+                    <Typography variant="h6" sx={{ color: '#CBF7DA' }}>{simulation.batterySoC.toFixed(1)}%</Typography>
                   </Grid>
                   <Grid item xs={4}>
-                    <Typography variant="body2" color="text.secondary">Battery Energy</Typography>
-                    <Typography variant="h6">{simulation.batteryEnergy.toFixed(2)} kWh</Typography>
+                    <Typography variant="body2" sx={{ color: '#ffffff' }}>Battery Energy</Typography>
+                    <Typography variant="h6" sx={{ color: '#ffffff' }}>{simulation.batteryEnergy.toFixed(2)} kWh</Typography>
                   </Grid>
                   <Grid item xs={4}>
-                    <Typography variant="body2" color="text.secondary">Grid Import</Typography>
-                    <Typography variant="h6" color="error.main">{simulation.cumulativeGridImport.toFixed(2)} kWh</Typography>
+                    <Typography variant="body2" sx={{ color: '#ffffff' }}>Grid Import</Typography>
+                    <Typography variant="h6" sx={{ color: '#D32F2F' }}>{simulation.cumulativeGridImport.toFixed(2)} kWh</Typography>
                   </Grid>
                 </Grid>
                 {/* Level C */}
                 <Grid item xs={12} container spacing={2}>
                   <Grid item xs={6}>
-                    <Typography variant="body2" color="text.secondary">Grid Export</Typography>
-                    <Typography variant="h6" color="success.main">{simulation.cumulativeGridExport.toFixed(2)} kWh</Typography>
+                    <Typography variant="body2" sx={{ color: '#ffffff' }}>Grid Export</Typography>
+                    <Typography variant="h6" sx={{ color: '#CBF7DA' }}>{simulation.cumulativeGridExport.toFixed(2)} kWh</Typography>
                   </Grid>
                   <Grid item xs={6}>
-                    <Typography variant="body2" color="text.secondary">House Consumption</Typography>
-                    <Typography variant="h6">{simulation.cumulativeHouseConsumption.toFixed(2)} kWh</Typography>
+                    <Typography variant="body2" sx={{ color: '#ffffff' }}>House Consumption</Typography>
+                    <Typography variant="h6" sx={{ color: '#ffffff' }}>{simulation.cumulativeHouseConsumption.toFixed(2)} kWh</Typography>
                   </Grid>
                 </Grid>
               </Grid>
             </Paper>
-      </Box>
-      
+          </Box>
+          
           {/* Graph Section */}
           {chartData && (
             <Box sx={{ display: 'flex', justifyContent: 'center' }}>
               <Paper sx={{ 
                 p: { xs: 1, md: 2 }, 
-                border: '1px solid #e0e0e0', 
+                border: '1px solid #333', 
                 width: '100%',
+                bgcolor: '#1E1E1E',
                 '& .MuiBox-root': {
                   px: { xs: 0, md: 2 }
                 }
               }}>
                 <Box sx={{ mb: 2 }}>
-        <Typography gutterBottom>
-          Time of Day: {formatTime(timeOfDay)}
-        </Typography>
-        <Slider
-          value={timeOfDay}
-          onChange={handleTimeChange}
-          min={0}
+                  <Typography gutterBottom sx={{ color: '#ffffff' }}>
+                    Time of Day: {formatTime(timeOfDay)}
+                  </Typography>
+                  <Slider
+                    value={timeOfDay}
+                    onChange={handleTimeChange}
+                    min={0}
                     max={23.9167}
-          step={0.1}
-          valueLabelDisplay="auto"
-                    sx={{ color: '#1976d2' }}
-        />
-      </Box>
-                <Typography variant="h6" gutterBottom sx={{ color: '#1976d2' }}>
+                    step={0.1}
+                    valueLabelDisplay="auto"
+                    sx={{ 
+                      color: '#CBF7DA',
+                      '& .MuiSlider-thumb': {
+                        backgroundColor: '#CBF7DA',
+                        '&:hover, &.Mui-focusVisible': {
+                          boxShadow: '0 0 0 8px rgba(203, 247, 218, 0.16)',
+                        },
+                        '&.Mui-active': {
+                          boxShadow: '0 0 0 8px rgba(203, 247, 218, 0.16)',
+                        },
+                      },
+                      '& .MuiSlider-rail': {
+                        backgroundColor: '#333',
+                      },
+                      '& .MuiSlider-track': {
+                        backgroundColor: '#CBF7DA',
+                      }
+                    }}
+                  />
+                </Box>
+                <Typography variant="h6" gutterBottom sx={{ color: '#CBF7DA' }}>
                   System Performance Over Time
                 </Typography>
                 <Box sx={{ 
@@ -938,11 +1223,11 @@ function App() {
                   <Line 
                     data={chartData} 
                     options={chartOptions}
-            />
-          </Box>
-      </Paper>
-        </Box>
-      )}
+                  />
+                </Box>
+              </Paper>
+            </Box>
+          )}
         </Grid>
       </Grid>
     </Container>

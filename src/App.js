@@ -416,11 +416,11 @@ function App() {
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
-    animation: false, // Disable all animations
+    animation: false,
     layout: {
       padding: {
-        left: 10,
-        right: 10,
+        left: 0,
+        right: 0,
         top: 10,
         bottom: 10
       }
@@ -439,7 +439,6 @@ function App() {
           usePointStyle: true,
           pointStyle: 'circle',
           filter: function(legendItem, data) {
-            // Only show legend for the first three datasets (main data series)
             return legendItem.datasetIndex < 3;
           }
         }
@@ -458,19 +457,26 @@ function App() {
     scales: {
       x: {
         grid: {
-          display: false
+          display: true,
+          color: 'rgba(0, 0, 0, 0.1)'
         },
         ticks: {
           font: {
             size: 11
-          }
+          },
+          maxRotation: 45,
+          minRotation: 45,
+          padding: 2
+        },
+        afterFit: (scaleInstance) => {
+          scaleInstance.width = 10;
         }
       },
       y1: {
         type: 'linear',
-        position: 'left',
+        position: 'right',
         title: { 
-          display: true, 
+          display: true,
           text: 'Battery SoC (%)',
           font: {
             size: 11
@@ -478,51 +484,53 @@ function App() {
         },
         min: 0,
         max: 100,
+        grid: {
+          display: true,
+          color: 'rgba(0, 0, 0, 0.1)'
+        },
         ticks: {
-          font: {
-            size: 11
-          }
+          display: false
+        },
+        afterFit: (scaleInstance) => {
+          scaleInstance.width = 35;
         }
       },
       y2: {
         type: 'linear',
         position: 'right',
         title: { 
-          display: true, 
-          text: 'Grid Import (kWh)',
-          font: {
-            size: 11
-          }
+          display: false
         },
-        grid: { drawOnChartArea: false },
+        grid: { 
+          display: true,
+          color: 'rgba(0, 0, 0, 0.1)'
+        },
         ticks: {
-          font: {
-            size: 11
-          }
+          display: false
         },
         afterFit: (scaleInstance) => {
-          scaleInstance.width = 40;
+          scaleInstance.width = 25;
         }
       },
       y3: {
         type: 'linear',
         position: 'right',
         title: { 
-          display: true, 
+          display: true,
           text: 'Solar Production (kW)',
           font: {
             size: 11
           }
         },
-        grid: { drawOnChartArea: false },
-        offset: true,
+        grid: { 
+          display: true,
+          color: 'rgba(0, 0, 0, 0.1)'
+        },
         ticks: {
-          font: {
-            size: 11
-          }
+          display: false
         },
         afterFit: (scaleInstance) => {
-          scaleInstance.width = 40;
+          scaleInstance.width = 35;
         }
       },
     },
@@ -559,24 +567,24 @@ function App() {
           <Paper sx={{ p: 2, mb: 3, border: '1px solid #e0e0e0', width: '100%' }}>
             <Typography variant="h6" gutterBottom sx={{ color: '#1976d2' }}>
               System Configuration
-            </Typography>
-            
-            {/* Inverter Capacity Input */}
+      </Typography>
+      
+      {/* Inverter Capacity Input */}
             <Box sx={{ mb: 3 }}>
-              <TextField
-                label="Inverter Capacity (kW)"
-                type="number"
-                value={inverterCapacity}
-                onChange={handleInverterCapacityChange}
+        <TextField
+          label="Inverter Capacity (kW)"
+          type="number"
+          value={inverterCapacity}
+          onChange={handleInverterCapacityChange}
                 inputProps={{ 
                   step: "1", 
                   min: "0",
                   style: { width: '120px' }
                 }}
                 size="small"
-              />
-            </Box>
-            
+        />
+      </Box>
+      
             {/* Battery Capacity Selection - Mobile */}
             <Box sx={{ mb: 3, display: { xs: 'block', md: 'none' } }}>
               <FormLabel component="legend">Battery Capacity (kWh)</FormLabel>
@@ -611,19 +619,19 @@ function App() {
 
             {/* Battery Capacity Selection - Desktop */}
             <Box sx={{ mb: 3, display: { xs: 'none', md: 'block' } }}>
-              <FormLabel component="legend">Battery Capacity (kWh)</FormLabel>
-              <RadioGroup
-                row
-                name="batteryCapacity"
-                value={batteryCapacity.toString()}
-                onChange={handleBatteryCapacityChange}
-              >
-                {['5', '10', '15', '20', '25'].map(cap => (
-                  <FormControlLabel
-                    key={cap}
-                    value={cap}
-                    control={<Radio />}
-                    label={`${cap} kWh`}
+          <FormLabel component="legend">Battery Capacity (kWh)</FormLabel>
+          <RadioGroup
+            row
+            name="batteryCapacity"
+            value={batteryCapacity.toString()}
+            onChange={handleBatteryCapacityChange}
+          >
+            {['5', '10', '15', '20', '25'].map(cap => (
+              <FormControlLabel
+                key={cap}
+                value={cap}
+                control={<Radio />}
+                label={`${cap} kWh`}
                     sx={{ 
                       margin: 0,
                       padding: '8px 16px',
@@ -636,9 +644,9 @@ function App() {
                         marginRight: '2px'
                       }
                     }}
-                  />
-                ))}
-              </RadioGroup>
+              />
+            ))}
+          </RadioGroup>
             </Box>
           </Paper>
 
@@ -888,26 +896,33 @@ function App() {
                 </Grid>
               </Grid>
             </Paper>
-          </Box>
-          
+      </Box>
+      
           {/* Graph Section */}
           {chartData && (
             <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-              <Paper sx={{ p: 2, border: '1px solid #e0e0e0', width: '100%' }}>
+              <Paper sx={{ 
+                p: { xs: 1, md: 2 }, 
+                border: '1px solid #e0e0e0', 
+                width: '100%',
+                '& .MuiBox-root': {
+                  px: { xs: 0, md: 2 }
+                }
+              }}>
                 <Box sx={{ mb: 2 }}>
-                  <Typography gutterBottom>
-                    Time of Day: {formatTime(timeOfDay)}
-                  </Typography>
-                  <Slider
-                    value={timeOfDay}
-                    onChange={handleTimeChange}
-                    min={0}
+        <Typography gutterBottom>
+          Time of Day: {formatTime(timeOfDay)}
+        </Typography>
+        <Slider
+          value={timeOfDay}
+          onChange={handleTimeChange}
+          min={0}
                     max={23.9167}
-                    step={0.1}
-                    valueLabelDisplay="auto"
+          step={0.1}
+          valueLabelDisplay="auto"
                     sx={{ color: '#1976d2' }}
-                  />
-                </Box>
+        />
+      </Box>
                 <Typography variant="h6" gutterBottom sx={{ color: '#1976d2' }}>
                   System Performance Over Time
                 </Typography>
@@ -923,11 +938,11 @@ function App() {
                   <Line 
                     data={chartData} 
                     options={chartOptions}
-                  />
-                </Box>
-              </Paper>
-            </Box>
-          )}
+            />
+          </Box>
+      </Paper>
+        </Box>
+      )}
         </Grid>
       </Grid>
     </Container>
